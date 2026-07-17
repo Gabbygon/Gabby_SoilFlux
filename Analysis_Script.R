@@ -258,3 +258,17 @@ teros_combined
    theme_minimal()
   
   
+ggplot(
+    teros_combined, aes(x = month, y = Value_vwc15, group = month, fill = as.factor(month))) + 
+    geom_boxplot() + 
+    labs(litle = "By Month", x = "Month", y = "Soil Volumetric Water content") + 
+    theme_minimal() + theme(asix.text.x = element_text(angle = 45, hjust= 1), 
+                            legend.position = "none")
+
+
+ggplot(
+  teros_combined, aes(x = Value_vwc15, y = Value_temp15, fill = as.factor(month))) + 
+  geom_boxplot() + 
+  labs(litle = "By Month", x = "Soil Volumetric Water content", y = "Soil Temperature") + 
+  theme_minimal() + theme(asix.text.x = element_text(angle = 45, hjust= 1), 
+                          legend.position = "none")
