@@ -19,8 +19,8 @@ str(soil_temp15)
 print(colnames(soil_temp15))
 summary(soil_temp15)
 
-#removing columns 
-soil_temp15 <- soil_temp15 |> select (-Site, -Instrument, -research_name)
+# Select just the columns we want to work with 
+soil_temp15 <- soil_temp15 |> select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
 
 # Line Chart of all the data
 # Randomly sub_sample the data to make plotting faster
@@ -187,7 +187,9 @@ soil_temp15 |>
 # SOIL volumetric Water Content
 # Read in data from soil vwc parquet file
 file_path2 <- "TMP_F_2025_soil-vwc-15cm_L2_v2-1.parquet"
-soil_vwc <- read_parquet(file_path2)
+soil_vwc <- read_parquet(file_path2) |>  
+  # just like temperature, select only certain columns we care about
+  select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
 
 #Summarizing 
 head(soil_vwc)
@@ -196,9 +198,6 @@ dim(soil_vwc)
 str(soil_vwc)
 print(colnames(soil_vwc))
 summary(soil_vwc)
-
-#removing columns 
-soil_vwc <- soil_vwc |> select (-Site, -Plot, -research_name, -N_avg, -N_drop)
 
 # Line Chart of all the data
 # Randomly sub_sample the data to make plotting faster
@@ -217,15 +216,20 @@ soil_vwc |>
   geom_line() + 
   geom_point()
 
-#merged
-soil_vwc <- soil_vwc |> select (-Instrument, -Instrument_ID, -Location, -Value_MAC)
-soil_temp15 <- soil_temp15 |> select (-Plot, -Instrument_ID, -Location, -N_avg, - N_drop, -Value_MAC)
-soil_temp15 <- rename(soil_temp15, TimeStamp_temp = TIMESTAMP, Value_temp = Value)
-soil_vwc <- rename( soil_vwc, TimeStamp_vwc = TIMESTAMP, Value_vwc = Value)
-soil_temp15 |> left_join(soil_vwc, by = "SensorID")
-
-smallerdf <- slice(soil_temp15, 1: 33720)
-smallerdf |> left_join(soil_vwc, by = "Sensor_ID")
+# Merge the data
+# TEROS sensors are clustered -- a single sensor simultaneously
+# measures temperature, water content, and electrical conductivity
+soil_temp15 |> 
+  # both data frames have 'Value' columns, which we need to be able to 
+  # distinguish after merging. Start by renaming the temperature value...
+  rename(Value_temp15 = Value) |> 
+  # ...do the join...
+  left_join(soil_vwc, by = c("Plot", "TIMESTAMP", "Instrument_ID", "Sensor_ID", "Location"), 
+            relationship = "one-to-one") |> 
+  # ...and now rename the vwc value column
+  rename(Value_vwc15 = Value) ->
+  teros_combined
+  
 
  # EXAMPLE
  
