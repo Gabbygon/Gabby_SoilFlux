@@ -42,7 +42,7 @@ df |>
   geom_point()
 
 
-#boxplot for all of data? 
+#boxplot for all of data
 df |> 
   mutate(Month = month(TIMESTAMP)) |> 
   group_by(Month) |> 
@@ -66,11 +66,6 @@ df<- df |>
 df <- df |> 
   mutate(month = month(month_column, label = TRUE))
 
-#boxplot 1st try
-#df |> 
-  #slice_sample(n = 1000) |> 
-  #ggplot(aes(x = factor (month_column), y = Value)) + geom_boxplot()
-
 
 #Boxplot
 ggplot(
@@ -80,7 +75,7 @@ ggplot(
   theme_minimal() + theme(asix.text.x = element_text(angle = 45, hjust= 1), 
   legend.position = "none")
 
-#Help...
+#Box plot with colors 
 df |> 
   slice_sample(n = 1000) |> 
   ggplot(aes(x = month, y = Value, color = Value)) + 
@@ -222,12 +217,16 @@ soil_vwc |>
   geom_line() + 
   geom_point()
 
-#merged?
- df |> left_join(soil_vwc) -> merged_df2
- merged_df <- inner_join(df, soil_vwc, by = "TIMESTAMP", "Sensor_ID")
- 
- 
- 
+#merged
+soil_vwc <- soil_vwc |> select (-Instrument, -Instrument_ID, -Location, -Value_MAC)
+df <- df |> select (-Plot, -Instrument_ID, -Location, -N_avg, - N_drop, -Value_MAC)
+df <- rename(df, TimeStamp_temp = TIMESTAMP, Value_temp = Value)
+soil_vwc <- rename( soil_vwc, TimeStamp_vwc = TIMESTAMP, Value_vwc = Value)
+df |> left_join(soil_vwc, by = "SensorID")
+
+smallerdf <- slice(df, 1: 33720)
+smallerdf |> left_join(soil_vwc, by = "Sensor_ID")
+
  # EXAMPLE
  
  example_temp <- tibble(TS = 1:3, Value = 1:3)
