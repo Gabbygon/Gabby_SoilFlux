@@ -11,7 +11,7 @@ library(patchwork)
 file_path <- "TMP_F_2025_soil-temp-15cm_L2_v2-1.parquet"
 soil_temp15 <- read_parquet(file_path)
 
-#Summarizing 
+#Summarizing soil temp file 
 head(soil_temp15)
 names(soil_temp15)
 dim(soil_temp15)
@@ -41,33 +41,23 @@ soil_temp15 |>
   geom_line() + 
   geom_point()
 
-
-#boxplot for all of data
+#bar graph of all soil temp data 
 soil_temp15 |> 
   mutate(Month = month(TIMESTAMP)) |> 
   group_by(Month) |> 
   summarize(mean_temp = mean(Value, na.rm = TRUE)) |> 
   ggplot(aes(x = Month, y = mean_temp)) +  
-  geom_boxplot()
-
-
-soil_temp15 |> 
-       mutate(Month = month(TIMESTAMP)) |> 
-       group_by(Month) |> 
-       summarize(mean_temp = mean(Value, na.rm = TRUE)) |> 
-       ggplot(aes(x = Month, y = mean_temp)) +  
-       geom_col()
+  geom_col()
 
 #convert to date type and extract the month
 soil_temp15<- soil_temp15 |> 
   mutate(
-    month_column = as.Date(TIMESTAMP)
-  )
+    month_column = as.Date(TIMESTAMP))
 soil_temp15 <- soil_temp15 |> 
-  mutate(month = month(month_column, label = TRUE))
+  mutate(
+    month = month(month_column, label = TRUE))
 
-
-#Boxplot
+#Box plot graph of temp and month 
 ggplot(
   soil_temp15, aes(x = month, y = Value, group = month, fill = as.factor(month))) + 
   geom_boxplot() + 
@@ -75,13 +65,12 @@ ggplot(
   theme_minimal() + theme(asix.text.x = element_text(angle = 45, hjust= 1), 
   legend.position = "none")
 
-#Box plot with colors 
+#graph of temp and month with colors
 soil_temp15 |> 
   slice_sample(n = 1000) |> 
   ggplot(aes(x = month, y = Value, color = Value)) + 
   geom_point(na.rm = TRUE) +
   scale_color_gradient2(low = "blue", high = "red",mid ="blue", midpoint = 15, limits = c(0, 30)) +
-  #geom_boxplot() + scale_fill_gradient(low = "blue", high= "red") + 
   labs(title = "By Month", x = "Month", y = "Temperature") + 
   theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust= 1))
 
@@ -93,7 +82,7 @@ ggplot(
   labs(title = "Temperature by Month", y = "Temperature") + 
   theme_minimal()
 
-#patchwork and combining
+#patchwork of each month for box plot 
 m1 <- ggplot(
   filter(soil_temp15, month == "Jan"), 
   aes( x = month, y = Value)) + 
@@ -110,68 +99,67 @@ m3 <- ggplot(
    filter(soil_temp15, month == "Mar"), 
    aes( x = month, y = Value)) + 
    geom_boxplot() + 
-  labs(title= "March")
+   labs(title= "March")
 
 m4 <- ggplot(
-         filter(soil_temp15, month == "Apr"), 
-            aes( x = month, y = Value)) + 
-            geom_boxplot() + 
-            labs(title= "April")
+   filter(soil_temp15, month == "Apr"), 
+   aes( x = month, y = Value)) + 
+   geom_boxplot() + 
+   labs(title= "April")
 
 m5 <- ggplot(
-         filter(soil_temp15, month == "May"), 
-            aes( x = month, y = Value)) + 
-            geom_boxplot() + 
-            labs(title= "May")
+    filter(soil_temp15, month == "May"), 
+    aes( x = month, y = Value)) + 
+    geom_boxplot() + 
+    labs(title= "May")
 
 m6 <- ggplot(
-         filter(soil_temp15, month == "Jun"), 
-            aes( x = month, y = Value)) + 
-            geom_boxplot() + 
-            labs(title= "June")
+    filter(soil_temp15, month == "Jun"), 
+    aes( x = month, y = Value)) + 
+    geom_boxplot() + 
+    labs(title= "June")
 
 m7 <- ggplot(
-         filter(soil_temp15, month == "Jul"), 
-            aes( x = month, y = Value)) + 
-            geom_boxplot() + 
-            labs(title= "July")
+    filter(soil_temp15, month == "Jul"), 
+    aes( x = month, y = Value)) + 
+    geom_boxplot() + 
+    labs(title= "July")
 
 m8 <- ggplot(
-         filter(soil_temp15, month == "Aug"), 
-            aes( x = month, y = Value)) + 
-            geom_boxplot() + 
-            labs(title= "August")
+    filter(soil_temp15, month == "Aug"), 
+    aes( x = month, y = Value)) + 
+    geom_boxplot() + 
+    labs(title= "August")
 
 m9 <- ggplot(
-         filter(soil_temp15, month == "Sep"), 
-           aes( x = month, y = Value)) + 
-        geom_boxplot() + 
-           labs(title= "September")
+    filter(soil_temp15, month == "Sep"), 
+    aes( x = month, y = Value)) + 
+    geom_boxplot() + 
+    labs(title= "September")
 
 m10 <- ggplot(
-         filter(soil_temp15, month == "Oct"), 
-            aes( x = month, y = Value)) + 
-            geom_boxplot() + 
-            labs(title= "October")
+    filter(soil_temp15, month == "Oct"), 
+    aes( x = month, y = Value)) + 
+    geom_boxplot() + 
+    labs(title= "October")
 
 m11 <- ggplot(
-         filter(soil_temp15, month == "Nov"), 
-            aes( x = month, y = Value)) + 
-            geom_boxplot() + 
-            labs(title= "November")
+    filter(soil_temp15, month == "Nov"), 
+    aes( x = month, y = Value)) + 
+    geom_boxplot() + 
+    labs(title= "November")
 
 m12 <- ggplot(
-         filter(soil_temp15, month == "Dec"), 
-           aes( x = month, y = Value)) + 
-            geom_boxplot() + 
-            labs(title= "December")
+    filter(soil_temp15, month == "Dec"), 
+    aes( x = month, y = Value)) + 
+    geom_boxplot() + 
+    labs(title= "December")
 
-#Combining the plots 
+#Combining the plots into one singular graph 
 m1 + m2 + m3 + m4 + m5 + m6 + m7 + m8 + m9 + m10 + m11 + m12 + 
   plot_layout(ncol = 6)
 
 #per-month variability 
-
 soil_temp15 |> 
   group_by(month) |>
   # compute mean and s.d. for each month
@@ -182,8 +170,6 @@ soil_temp15 |>
   geom_line(group = 1, linewidth = 2, linetype = 2) +
   geom_errorbar(aes(ymin = mean_value - sd_value, ymax = mean_value + sd_value))
 
-#________________________________________
-
 # SOIL volumetric Water Content
 # Read in data from soil vwc parquet file
 file_path2 <- "TMP_F_2025_soil-vwc-15cm_L2_v2-1.parquet"
@@ -191,7 +177,7 @@ soil_vwc <- read_parquet(file_path2) |>
   # just like temperature, select only certain columns we care about
   select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
 
-#Summarizing 
+#Summarizing swc file 
 head(soil_vwc)
 names(soil_vwc)
 dim(soil_vwc)
@@ -224,15 +210,26 @@ soil_temp15 |>
   # distinguish after merging. Start by renaming the temperature value...
   rename(Value_temp15 = Value) |> 
   # ...do the join...
-  left_join(soil_vwc, by = c("Plot", "TIMESTAMP", "Instrument_ID", "Sensor_ID", "Location"), 
+  left_join(soil_vwc, 
+            by = c("Plot", "TIMESTAMP", "Instrument_ID", "Sensor_ID", "Location"), 
             relationship = "one-to-one") |> 
   # ...and now rename the vwc value column
   rename(Value_vwc15 = Value) ->
   teros_combined
   
+# 1. Experiment with plotting this merged dataset
+# NOTE it's big so you will want to use slice_sample()
+
+# 2. Maybe do some cleanup on the code above - Done 
+
+# 3. If you want to proceed we can add in EC and you can do same thing
+
+
 
  # EXAMPLE
  
+teros_combined
+
  example_temp <- tibble(TS = 1:3, Value = 1:3)
  example_vwc <- tibble(TS = 1:3, Value = 4:6)
  
@@ -245,5 +242,13 @@ soil_temp15 |>
  
  example_temp |>
    left_join(example_vwc, by = "TS")
+ 
+
+#trying to do graphs
+ teros_combined |> slice_sample(1000) |> ggplot(aes(x = TIMESTAMP))
+ 
+ 
+ 
+ 
  
  
