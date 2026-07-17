@@ -245,10 +245,16 @@ teros_combined
  
 
 #trying to do graphs
- teros_combined |> slice_sample(1000) |> ggplot(aes(x = TIMESTAMP))
+ scale_factor <- 42.15
  
- 
- 
- 
- 
- 
+  ggplot(teros_combined, aes(x = TIMESTAMP)) +
+   geom_point(aes(y = Value_temp15), color = "red", alpha = 0.05, size = 1) +
+   geom_point(aes(y = Value_vwc15 * scale_factor), color = "blue", alpha = 0.05, size = 1) +
+   geom_smooth(aes(y = Value_temp15), method = "lm", se = FALSE, color = "red") +
+   geom_smooth(aes(y = Value_vwc15 * scale_factor), method = "lm", se = FALSE, color = "blue") +
+   scale_y_continuous(name = "Temperature (°C)",
+                      sec.axis = sec_axis(~ . / scale_factor, name = "VWC")) +
+   labs(title = "Soil Temperature and Water Content Over Time", x = "Timestamp") +
+   theme_minimal()
+  
+  
