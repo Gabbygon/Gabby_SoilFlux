@@ -27,7 +27,7 @@ soil_temp15 <- soil_temp15 |> select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID,
 soil_temp15 |>
   slice_sample(n = 10000) |>
   ggplot(aes(x = TIMESTAMP, y = Value)) +
-  geom_point(color = "pink") + 
+  geom_point(color = "brown") + 
   labs( title = "Soil Temperature", x = "TimeStamp", y = "Temperature") + 
   theme_minimal()
 
@@ -61,7 +61,7 @@ soil_temp15 <- soil_temp15 |>
 ggplot(
   soil_temp15, aes(x = month, y = Value, group = month, fill = as.factor(month))) + 
   geom_boxplot() + 
-  labs(litle = "By Month", x = "Month", y = "Temperature") + 
+  labs(title = "By Month", x = "Month", y = "Temperature") + 
   theme_minimal() + theme(asix.text.x = element_text(angle = 45, hjust= 1), 
   legend.position = "none")
 
@@ -167,7 +167,7 @@ soil_temp15 |>
             sd_value = sd(Value, na.rm = TRUE)) |>
   ggplot(aes(x = month, y = mean_value)) +
   geom_point() + 
-  geom_line(group = 1, linewidth = 2, linetype = 2) +
+  geom_line(group = 1, linewidth = 1, linetype = 2) +
   geom_errorbar(aes(ymin = mean_value - sd_value, ymax = mean_value + sd_value))
 
 # SOIL volumetric Water Content
@@ -190,7 +190,7 @@ summary(soil_vwc)
 soil_vwc |>
   slice_sample(n = 10000) |>
   ggplot(aes(x = TIMESTAMP, y = Value)) +
-  geom_point(color = "Green") + 
+  geom_point(color = "brown") + 
   labs( title = "Soil VWC", x = "TimeStamp", y = "Columetric water content") + 
   theme_minimal()
 
@@ -201,6 +201,39 @@ soil_vwc |>
   ggplot(aes(x = TIMESTAMP, y = mean_vwc, group = TIMESTAMP)) +  
   geom_line() + 
   geom_point()
+
+#convert to date type and extract the month for wvc
+soil_vwc<- soil_vwc |> 
+  mutate(
+    month_column = as.Date(TIMESTAMP))
+soil_vwc <- soil_vwc |> 
+  mutate(
+    month = month(month_column, label = TRUE))
+
+#grpah of each month for vwc
+ggplot(
+  soil_vwc, aes(x = month, y = Value)) + 
+  geom_boxplot() + 
+  facet_wrap(~ month, scales = "free_x", ncol = 6) + 
+  labs(title = "VWC by Month", y = "Temperature") + 
+  theme_minimal()
+
+#bar graph of all data vwc 
+soil_vwc |> 
+  mutate(Month = month(TIMESTAMP)) |> 
+  group_by(Month) |> 
+  summarize(mean_temp = mean(Value, na.rm = TRUE)) |> 
+  ggplot(aes(x = Month, y = mean_temp)) +  
+  geom_col()
+
+#graph with colors 
+soil_vwc |> 
+  slice_sample(n = 1000) |> 
+  ggplot(aes(x = month, y = Value, color = Value)) + 
+  geom_point(na.rm = TRUE) +
+  scale_color_gradient2(low = "brown", high = "blue",mid ="brown", midpoint = 5, limits = c(0, 30)) +
+  labs(title = "By Month", x = "Month", y = "VWC") + 
+  theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust= 1))
 
 # Merge the data
 # TEROS sensors are clustered -- a single sensor simultaneously
