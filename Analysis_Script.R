@@ -367,6 +367,21 @@ s_soil_vwc_30 <- read_parquet("L2_data/TMP_S_2026_soil-vwc-30cm_L2_v___.parquet"
 s_soil_vwc_15 <- read_parquet("L2_data/TMP_S_2026_soil-vwc-15cm_L2_v___.parquet")
 s_soil_vwc_5 <- read_parquet("L2_data/TMP_S_2026_soil-vwc-5cm_L2_v___.parquet")
 
+
 #Visualizing N/As
 vis_miss(s_soil_vwc_5)
 s_soil_vwc_5 |> drop_na(Value)
+#Graphing Value without N/A for visualization 
+clean_data_soil_vwc5 <- s_soil_vwc_5 |> drop_na(Value)
+ggplot(clean_data_soil_vwc5, aes(x = TIMESTAMP, y = Value)) + geom_point()
+
+#trying to graph with the N/A for visualization 
+s_soil_vwc_5 |> 
+  mutate(Value = fct_na_value_to_level(factor(Value), level = "Missing Data")) |> 
+  ggplot(aes(x = Value)) + 
+  geom_bar(fill = "steelblue")
+
+s_soil_vwc5 |> 
+  mutate(Value = fct_na_value_to_level(factor(Value), level = "Missing Data")) |> 
+  ggplot(aes(x = Value)) + geom_bar(fill = "steelblue")
+
