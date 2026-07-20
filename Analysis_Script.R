@@ -8,8 +8,12 @@ library(tidyverse)
 library(patchwork)
 
 # Read in data from soil temp parquet file 
-file_path <- "TMP_F_2025_soil-temp-15cm_L2_v2-1.parquet"
-soil_temp15 <- read_parquet(file_path)
+#file_path <- "TMP_F_2025_soil-temp-15cm_L2_v2-1.parquet"
+#soil_temp15 <- read_parquet(file_path)
+
+#read in data from soil temp 15 parquet file 
+soil_temp15 <- read_parquet("L2_data/TMP_F_2025_soil-temp-15cm_L2_v2-1.parquet")
+
 
 #Summarizing soil temp file 
 head(soil_temp15)
@@ -177,6 +181,10 @@ soil_vwc <- read_parquet(file_path2) |>
   # just like temperature, select only certain columns we care about
   select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
 
+#trying 
+file_path2 <- "L2_data/TMP_F_2025_soil-vwc-15cm_L2_v2-1.parquet"
+soil_vwc <- read_parquet(file_path2)
+
 #Summarizing swc file 
 head(soil_vwc)
 names(soil_vwc)
@@ -305,3 +313,60 @@ ggplot(
   labs(litle = "By Month", x = "Soil Volumetric Water content", y = "Soil Temperature") + 
   theme_minimal() + theme(asix.text.x = element_text(angle = 45, hjust= 1), 
                           legend.position = "none")
+
+#reading all of the parquet files 
+#Control soil plot 
+#Soil EC 
+C_soil_EC_30 <- read_parquet("L2_data/TMP_C_2026_soil-EC-30cm_L2_v___.parquet")
+C_soil_EC_15 <- read_parquet("L2_data/TMP_C_2026_soil-EC-15cm_L2_v___.parquet")
+C_soil_EC_5 <- read_parquet("L2_data/TMP_C_2026_soil-EC-5cm_L2_v___.parquet")
+#Soil salinity
+C_soil_sal_30 <- read_parquet("L2_data/TMP_C_2026_soil-salinity-30cm_L2_v___.parquet")
+C_soil_sal_15 <- read_parquet("L2_data/TMP_C_2026_soil-salinity-15cm_L2_v___.parquet")
+C_soil_sal_5 <- read_parquet("L2_data/TMP_C_2026_soil-salinity-5cm_L2_v___.parquet")
+#Soil Temperature 
+C_soil_temp_30 <- read_parquet("L2_data/TMP_C_2026_soil-temp-30cm_L2_v___.parquet")   
+C_soil_temp_15 <- read_parquet("L2_data/TMP_C_2026_soil-temp-15cm_L2_v___.parquet")  
+C_soil_temp_5 <- read_parquet("L2_data/TMP_C_2026_soil-temp-5cm_L2_v___.parquet")   
+#Soil VWC
+c_soil_vwc_30 <- read_parquet("L2_data/TMP_C_2026_soil-vwc-30cm_L2_v___.parquet")
+c_soil_vwc_15 <- read_parquet("L2_data/TMP_C_2026_soil-vwc-15cm_L2_v___.parquet")
+c_soil_vwc_5 <- read_parquet("L2_data/TMP_C_2026_soil-vwc-5cm_L2_v___.parquet")
+
+#Freshwater soil plot
+#soil EC
+f_soil_EC_30 <- read_parquet ("L2_data/TMP_F_2026_soil-EC-30cm_L2_v___.parquet")
+f_soil_EC_15 <- read_parquet("L2_data/TMP_F_2026_soil-EC-15cm_L2_v___.parquet")
+f_soil_EC_5 <- read_parquet("L2_data/TMP_F_2026_soil-EC-5cm_L2_v___.parquet")
+#Soil salinity 
+f_soil_sal_30 <- read_parquet("L2_data/TMP_F_2026_soil-salinity-30cm_L2_v___.parquet")
+f_soil_sal_15 <- read_parquet("L2_data/TMP_F_2026_soil-salinity-15cm_L2_v___.parquet")
+#Soil Temperature
+f_soil_temp_30 <- read_parquet("L2_data/TMP_F_2026_soil-temp-30cm_L2_v___.parquet") 
+f_soil_temp_15 <- read_parquet("L2_data/TMP_F_2026_soil-temp-15cm_L2_v___.parquet") 
+f_soil_temp_5 <- read_parquet("L2_data/TMP_F_2026_soil-temp-5cm_L2_v___.parquet") 
+#Soil VWC
+f_soil_vwc_30 <- read_parquet("L2_data/TMP_F_2026_soil-vwc-30cm_L2_v___.parquet")  
+f_soil_vwc_15 <- read_parquet("L2_data/TMP_F_2026_soil-vwc-15cm_L2_v___.parquet")  
+
+#Saltwater Plot 
+#Soil EC
+s_soil_EC_30 <- read_parquet("L2_data/TMP_S_2026_soil-EC-30cm_L2_v___.parquet")      
+s_soil_EC_15 <- read_parquet("L2_data/TMP_S_2026_soil-EC-15cm_L2_v___.parquet")   
+s_soil_EC_5 <- read_parquet("L2_data/TMP_S_2026_soil-EC-5cm_L2_v___.parquet")  
+#Soil salinity
+s_soil_sal_30 <- read_parquet("L2_data/TMP_S_2026_soil-salinity-30cm_L2_v___.parquet")
+s_soil_sal_15 <- read_parquet("L2_data/TMP_S_2026_soil-salinity-15cm_L2_v___.parquet")
+s_soil_sal_5 <- read_parquet("L2_data/TMP_S_2026_soil-salinity-5cm_L2_v___.parquet")
+#Soil temp 
+s_soil_temp_30 <- read_parquet("L2_data/TMP_S_2026_soil-temp-30cm_L2_v___.parquet")
+s_soil_temp_15 <- read_parquet("L2_data/TMP_S_2026_soil-temp-15cm_L2_v___.parquet")
+s_soil_temp_5 <- read_parquet("L2_data/TMP_S_2026_soil-temp-5cm_L2_v___.parquet")
+#soil VWC 
+s_soil_vwc_30 <- read_parquet("L2_data/TMP_S_2026_soil-vwc-30cm_L2_v___.parquet")
+s_soil_vwc_15 <- read_parquet("L2_data/TMP_S_2026_soil-vwc-15cm_L2_v___.parquet")
+s_soil_vwc_5 <- read_parquet("L2_data/TMP_S_2026_soil-vwc-5cm_L2_v___.parquet")
+
+#Visualizing N/As
+vis_miss(s_soil_vwc_5)
+s_soil_vwc_5 |> drop_na(Value)
