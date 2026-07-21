@@ -1,0 +1,68 @@
+---
+title: "Gabby TEMPEST Analysis"
+author: "G"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+  word_document:
+    toc: true
+  pdf_document:
+    toc: true
+---
+
+Welcome to the TEMPEST Flood Tree Greenhouse Gas Flux dataset analysis!
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.width = 9)
+
+library(arrow)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(lubridate)
+library(tidyverse)
+library(patchwork)
+library(naniar)
+```
+
+# Setup
+
+```{r read-data}
+
+# Read in data from soil temp parquet file 
+#file_path <- "TMP_F_2025_soil-temp-15cm_L2_v2-1.parquet"
+#soil_temp15 <- read_parquet(file_path)
+
+#read in data from soil temp 15 parquet file 
+soil_temp15 <- read_parquet("L2_data/TMP_F_2025_soil-temp-15cm_L2_v2-1.parquet")
+
+#Summarizing soil temp file 
+head(soil_temp15)
+names(soil_temp15)
+dim(soil_temp15)
+str(soil_temp15)
+print(colnames(soil_temp15))
+summary(soil_temp15)
+
+# Select just the columns we want to work with 
+soil_temp15 <- soil_temp15 |> 
+  select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
+
+```
+
+## Data visualization
+
+```{r line-charts}
+# Line Chart of all the data
+# Randomly sub_sample the data to make plotting faster
+soil_temp15 |>
+  slice_sample(n = 10000) |>
+  ggplot(aes(x = TIMESTAMP, y = Value)) +
+  geom_point(color = "brown", na.rm = TRUE) + 
+  labs( title = "Soil Temperature", x = "TimeStamp", y = "Temperature") + 
+  theme_minimal()
+```
+
