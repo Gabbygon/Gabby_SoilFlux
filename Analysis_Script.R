@@ -6,6 +6,7 @@ library(ggplot2)
 library(lubridate)
 library(tidyverse)
 library(patchwork)
+library(naniar)
 
 # Read in data from soil temp parquet file 
 #file_path <- "TMP_F_2025_soil-temp-15cm_L2_v2-1.parquet"
@@ -176,14 +177,9 @@ soil_temp15 |>
 
 # SOIL volumetric Water Content
 # Read in data from soil vwc parquet file
-file_path2 <- "TMP_F_2025_soil-vwc-15cm_L2_v2-1.parquet"
-soil_vwc <- read_parquet(file_path2) |>  
+  soil_vwc <- read_parquet("L2_data/TMP_F_2025_soil-vwc-15cm_L2_v2-1.parquet") |> 
   # just like temperature, select only certain columns we care about
   select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
-
-#trying 
-file_path2 <- "L2_data/TMP_F_2025_soil-vwc-15cm_L2_v2-1.parquet"
-soil_vwc <- read_parquet(file_path2)
 
 #Summarizing swc file 
 head(soil_vwc)
@@ -314,7 +310,7 @@ ggplot(
   theme_minimal() + theme(asix.text.x = element_text(angle = 45, hjust= 1), 
                           legend.position = "none")
 
-#reading all of the parquet files 
+#reading all of the parquet files 2026 
 #Control soil plot 
 #Soil EC 
 C_soil_EC_30 <- read_parquet("L2_data/TMP_C_2026_soil-EC-30cm_L2_v___.parquet")
@@ -371,6 +367,9 @@ s_soil_vwc_5 <- read_parquet("L2_data/TMP_S_2026_soil-vwc-5cm_L2_v___.parquet")
 #Visualizing N/As
 vis_miss(s_soil_vwc_5)
 s_soil_vwc_5 |> drop_na(Value)
+
+gg_miss_var(C_soil_EC_15)
+
 #Graphing Value without N/A for visualization 
 clean_data_soil_vwc5 <- s_soil_vwc_5 |> drop_na(Value)
 ggplot(clean_data_soil_vwc5, aes(x = TIMESTAMP, y = Value)) + geom_point()
@@ -385,3 +384,4 @@ s_soil_vwc5 |>
   mutate(Value = fct_na_value_to_level(factor(Value), level = "Missing Data")) |> 
   ggplot(aes(x = Value)) + geom_bar(fill = "steelblue")
 
+df_clean |> ggplot(aes(x = TIMESTAMP, y = Value)) + geom_point(color = "brown")
