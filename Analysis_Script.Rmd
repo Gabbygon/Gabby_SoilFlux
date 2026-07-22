@@ -224,3 +224,64 @@ print(colnames(soil_vwc))
 summary(soil_vwc)
 ```
 
+```{r line chart of soil vwc}
+# Line Chart of all the data
+# Randomly sub_sample the data to make plotting faster
+soil_vwc |>
+  slice_sample(n = 10000) |>
+  ggplot(aes(x = TIMESTAMP, y = Value)) +
+  geom_point(color = "brown") + 
+  labs( title = "Soil VWC", x = "TimeStamp", y = "Columetric water content") + 
+  theme_minimal()
+
+#Time and value 
+soil_vwc |> 
+  group_by(TIMESTAMP) |>                             
+  summarize(mean_vwc = mean(Value, na.rm = TRUE)) |>       
+  ggplot(aes(x = TIMESTAMP, y = mean_vwc, group = TIMESTAMP)) +  
+  geom_line() + 
+  geom_point()
+```
+
+```{r soil vwc visualization}
+#convert to date type and extract the month for wvc
+soil_vwc<- soil_vwc |> 
+  mutate(
+    month_column = as.Date(TIMESTAMP))
+soil_vwc <- soil_vwc |> 
+  mutate(
+    month = month(month_column, label = TRUE))
+#grpah of each month for vwc
+ggplot(
+  soil_vwc, aes(x = month, y = Value)) + 
+  geom_boxplot() + 
+  facet_wrap(~ month, scales = "free_x", ncol = 6) + 
+  labs(title = "VWC by Month", y = "Temperature") + 
+  theme_minimal()
+#bar graph of all data vwc 
+soil_vwc |> 
+  mutate(Month = month(TIMESTAMP)) |> 
+  group_by(Month) |> 
+  summarize(mean_temp = mean(Value, na.rm = TRUE)) |> 
+  ggplot(aes(x = Month, y = mean_temp)) + geom_col()
+#graph with colors 
+soil_vwc |> 
+  slice_sample(n = 1000) |> 
+  ggplot(aes(x = month, y = Value, color = Value)) + 
+  geom_point(na.rm = TRUE) +
+  scale_color_gradient2(low = "brown", high = "blue",mid ="brown", midpoint = 5, limits = c(0, 30)) +
+  labs(title = "By Month", x = "Month", y = "VWC") + 
+  theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust= 1))
+```
+
+```{r (fixing)}
+ ggplot(
+    teros_combined, aes(x = month, y = Value_vwc15, group = month, fill = as.factor(month))) + 
+    geom_boxplot() + 
+    labs(litle = "By Month", x = "Month", y = "Soil Volumetric Water content") + 
+    theme_minimal() + theme(asix.text.x = element_text(angle = 45, hjust= 1), 
+                            legend.position = "none")
+
+```
+
+
