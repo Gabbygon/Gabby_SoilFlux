@@ -385,3 +385,61 @@ s_soil_vwc5 |>
   ggplot(aes(x = Value)) + geom_bar(fill = "steelblue")
 
 df_clean |> ggplot(aes(x = TIMESTAMP, y = Value)) + geom_point(color = "brown")
+
+
+#________________
+#2026 Soil temp
+#read in data from soil temp 15 parquet file 
+#Soil Temperature 
+C_soil_temp_30 <- read_parquet("L2_data/TMP_C_2026_soil-temp-30cm_L2_v___.parquet")   
+C_soil_temp_15 <- read_parquet("L2_data/TMP_C_2026_soil-temp-15cm_L2_v___.parquet")  
+C_soil_temp_5 <- read_parquet("L2_data/TMP_C_2026_soil-temp-5cm_L2_v___.parquet") 
+
+head(C_soil_temp_5)
+names(C_soil_temp_5)
+dim(C_soil_temp_5)
+str(C_soil_temp_5)
+print(colnames(C_soil_temp_5))
+summary(C_soil_temp_5)
+
+
+# Select just the columns we want to work with 
+C_soil_temp_5 <- soil_temp15 |> select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
+C_soil_temp_15 <- soil_temp15 |> select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
+C_soil_temp_30 <- soil_temp15 |> select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
+
+# Randomly sub_sample the data to make plotting faster
+C_soil_temp_15 |>
+  slice_sample(n = 10000) |>
+  ggplot(aes(x = TIMESTAMP, y = Value)) +
+  geom_point(color = "brown") + 
+  labs( title = "Soil Temperature", x = "TimeStamp", y = "Temperature") + 
+  theme_minimal()
+
+filter(C_soil_temp_15, !is.na(Value))
+C_soil_temp_15 |> ggplot(aes(x = TIMESTAMP, y = Value)) + geom_point(color = "red")
+
+C_soil_temp_5$TIMESTAMP <- as.Date(C_soil_temp_5$TIMESTAMP, format = "%Y-%m-%d")
+clean_c_soil_temp_5 <- C_soil_temp_5 |> filter(!is.na(Value))
+
+ggplot(
+  clean_c_soil_temp_5, aes(
+    x = TIMESTAMP, y = Value)) + 
+  geom_line() + 
+  labs(x = "Date", y = "Value", title = "Tempetature over time") +
+  theme_minimal()
+
+ggplot(clean_c_soil_temp_5 , aes(x = TIMESTAMP, y = Value)) + 
+  geom_line() +
+  scale_x_date(date_breaks = "1 week", date_labels = "%b %d") + 
+  labs(x = "Date", y = "Value") + theme_minimal()
+
+clean_c_soil_temp_5 |>  
+  slice_sample(n = 100) |> 
+  ggplot(
+    clean_c_soil_temp_5 , aes(x = TIMESTAMP, y = Value)) + 
+  geom_line() +
+  scale_x_date(
+    date_breaks = "1 week", date_labels = "%b %d") + 
+  labs(x = "Date", y = "Value") + 
+  theme_minimal()
