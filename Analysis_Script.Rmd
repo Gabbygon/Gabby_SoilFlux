@@ -274,13 +274,53 @@ soil_vwc |>
   theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust= 1))
 ```
 
-```{r (fixing)}
- ggplot(
-    teros_combined, aes(x = month, y = Value_vwc15, group = month, fill = as.factor(month))) + 
-    geom_boxplot() + 
-    labs(litle = "By Month", x = "Month", y = "Soil Volumetric Water content") + 
-    theme_minimal() + theme(asix.text.x = element_text(angle = 45, hjust= 1), 
-                            legend.position = "none")
+```{r merging of the two data plots}
+# TEROS sensors are clustered -- a single sensor simultaneously
+# measures temperature, water content, and electrical conductivity
+soil_temp15 |> 
+  # both data frames have 'Value' columns, which we need to be able to 
+  # distinguish after merging. Start by renaming the temperature value...
+  rename(Value_temp15 = Value) |> 
+  # ...do the join...
+  left_join(soil_vwc, 
+            by = c("Plot", "TIMESTAMP", "Instrument_ID", "Sensor_ID", "Location"), 
+            relationship = "one-to-one") |> 
+  # ...and now rename the vwc value column
+  rename(Value_vwc15 = Value) ->
+  teros_combined
+```
+
+```{r teros combined visualization}
+# TEROS sensors are clustered -- a single sensor simultaneously
+# measures temperature, water content, and electrical conductivity
+soil_temp15 |> 
+  # both data frames have 'Value' columns, which we need to be able to 
+  # distinguish after merging. Start by renaming the temperature value...
+  rename(Value_temp15 = Value) |> 
+  # ...do the join...
+  left_join(soil_vwc, 
+            by = c("Plot", "TIMESTAMP", "Instrument_ID", "Sensor_ID", "Location"), 
+            relationship = "one-to-one") |> 
+  # ...and now rename the vwc value column
+  rename(Value_vwc15 = Value) ->
+  teros_combined
+
+```
+## 2025 Control Soil Temperature
+```{r 2025 soil temp}
+#2026 Soil temp
+#read in data from soil temp 15 parquet file 
+#Soil Temperature 
+C_soil_temp_30 <- read_parquet("L2_data/TMP_C_2026_soil-temp-30cm_L2_v___.parquet")   
+C_soil_temp_15 <- read_parquet("L2_data/TMP_C_2026_soil-temp-15cm_L2_v___.parquet")  
+C_soil_temp_5 <- read_parquet("L2_data/TMP_C_2026_soil-temp-5cm_L2_v___.parquet") 
+
+head(C_soil_temp_5)
+names(C_soil_temp_5)
+dim(C_soil_temp_5)
+str(C_soil_temp_5)
+print(colnames(C_soil_temp_5))
+summary(C_soil_temp_5)
 
 ```
 
