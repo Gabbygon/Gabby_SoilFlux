@@ -443,3 +443,20 @@ clean_c_soil_temp_5 |>
     date_breaks = "1 week", date_labels = "%b %d") + 
   labs(x = "Date", y = "Value") + 
   theme_minimal()
+
+#soil EC
+f_soil_EC_30 <- read_parquet ("L2_data/TMP_F_2026_soil-EC-30cm_L2_v___.parquet")
+f_soil_EC_15 <- read_parquet("L2_data/TMP_F_2026_soil-EC-15cm_L2_v___.parquet")
+f_soil_EC_5 <- read_parquet("L2_data/TMP_F_2026_soil-EC-5cm_L2_v___.parquet")
+
+clean_f_soil_ec_15 <- f_soil_EC_15 |> 
+  mutate(across
+         (everything(), ~replace_na(., -1)))
+clean_f_soil_ec_15 <- filter(
+  clean_f_soil_ec_15, Value > 1)
+clean_f_soil_ec_15 |> 
+  ggplot(aes(
+    x= TIMESTAMP, y = Value)) + 
+  geom_point() + 
+  theme_classic()
+
