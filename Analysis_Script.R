@@ -512,8 +512,8 @@ f_15_soilcombined |>
 f_15_soilcombined <- f_15_soilcombined |> select (-month_column, - month)
 
 #plotting relationships 
-flood_start <- ymd_hms("2026-1-1 00:00:00")  
-flood_end   <- ymd_hms("2026-12-31 23:45:00")  
+flood_start <- ymd_hms("2026-6-1 00:00:00")  
+flood_end   <- ymd_hms("2026-6-14 23:45:00")  
 
 ggplot(f_15_soilcombined, aes(x = TIMESTAMP)) +
   geom_line(aes(y = Value_temp15, color = "Temperature")) +
@@ -521,3 +521,10 @@ ggplot(f_15_soilcombined, aes(x = TIMESTAMP)) +
   annotate("rect", xmin = flood_start, xmax = flood_end, ymin = -Inf, ymax = Inf, alpha = 0.1, fill = "green") +
   facet_wrap(~ Location) +
   labs(y = "Temperature/VWC", color = "Variable")
+
+ggplot(f_15_soilcombined, aes(x = TIMESTAMP)) +
+  geom_line(aes(y = Value_temp15, color = "Temperature")) +
+  geom_line(aes(y = Value_ec15 * 50, color = "EC")) +  # rescaled 
+  annotate("rect", xmin = flood_start, xmax = flood_end, ymin = -Inf, ymax = Inf, alpha = 0.1, fill = "green") +
+  facet_wrap(~ Location) +
+  labs(y = "Temperature/EC", color = "Variable")
