@@ -484,3 +484,40 @@ f_soil_temp_5<- f_soil_temp_5 |>
 f_soil_temp_5 <- f_soil_temp_5 |> 
   mutate(
     month = month(month_column, label = TRUE))
+
+
+#Restarting in a more organized way 
+#2026 freshwater soil plot data temp, vwc, and Ec (15cm)
+f_soil_temp_15 <- f_soil_temp_5 |> select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
+f_soil_vwc_15 <- f_soil_vwc_15 |> select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
+f_soil_EC_15 <- f_soil_EC_15 |> select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
+
+# Merge the data
+f_soil_temp_15 |> 
+  rename(Value_temp15 = Value) |> 
+  left_join(f_soil_vwc_15, 
+            by = c("Plot", "TIMESTAMP", "Instrument_ID", "Sensor_ID", "Location"), 
+            relationship = "one-to-one") |> 
+  rename(Value_vwc15 = Value) ->
+  f_15_soilcombined
+
+f_15_soilcombined |> 
+  left_join(f_soil_EC_15, 
+            by = c("Plot", "TIMESTAMP", "Instrument_ID", "Sensor_ID", "Location"), 
+            relationship = "one-to-one") |> 
+  rename(Value_ec15 = Value) ->
+  f_15_soilcombined
+
+#removing columns  
+f_15_soilcombined <- f_15_soilcombined |> select (-month_column, - month)
+
+#plotting relationships 
+flood_start <- ymd_hms("2026-1-1 00:00:00")  
+flood_end   <- ymd_hms("2026-12-31 23:45:00")  
+
+ggplot(f_15_soilcombined, aes(x = TIMESTAMP)) +
+  geom_line(aes(y = Value_temp15, color = "Temperature")) +
+  geom_line(aes(y = Value_vwc15 * 30, color = "VWC")) +  # rescaled 
+  annotate("rect", xmin = flood_start, xmax = flood_end, ymin = -Inf, ymax = Inf, alpha = 0.1, fill = "green") +
+  facet_wrap(~ Location) +
+  labs(y = "Temperature/VWC", color = "Variable")
