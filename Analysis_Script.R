@@ -8,10 +8,6 @@ library(tidyverse)
 library(patchwork)
 library(naniar)
 
-# Read in data from soil temp parquet file 
-#file_path <- "TMP_F_2025_soil-temp-15cm_L2_v2-1.parquet"
-#soil_temp15 <- read_parquet(file_path)
-
 #read in data from soil temp 15 parquet file 
 soil_temp15 <- read_parquet("L2_data/TMP_F_2025_soil-temp-15cm_L2_v2-1.parquet")
 
@@ -253,14 +249,40 @@ soil_temp15 |>
   # ...and now rename the vwc value column
   rename(Value_vwc15 = Value) ->
   teros_combined
-  
-# 1. Experiment with plotting this merged dataset
-# NOTE it's big so you will want to use slice_sample()
 
-# 2. Maybe do some cleanup on the code above - Done 
+teros_combined <- teros_combined |>  select (-month_column.x, -month_column.y, -month.x, -month.y)
 
-# 3. If you want to proceed we can add in EC and you can do same thing
+teros_combined |> 
+  left_join(f_soil_EC_15, 
+            by = c("Plot", "TIMESTAMP", "Instrument_ID", "Sensor_ID", "Location"), 
+            relationship = "one-to-one") |> 
+  rename(Value_ec15 = Value) ->
+  teros_combined
 
+teros_combined <- teros_combined |>  select (-research_name, -N_avg, -N_drop, -Value_MAC)
+
+#plotting relationships 
+flood_start <- ymd_hms("2026-1-1 00:00:00")  
+flood_end   <- ymd_hms("2026-12-31 23:45:00")  
+
+ggplot(teros_combined, aes(x = TIMESTAMP)) +
+  geom_line(aes(y = Value_temp15, color = "Temperature")) +
+  geom_line(aes(y = Value_vwc15 * 70, color = "VWC")) +  # rescaled 
+  annotate("rect", xmin = flood_start, xmax = flood_end, ymin = -Inf, ymax = Inf, alpha = 0.1, fill = "green") +
+  facet_wrap(~ Location) +
+  labs(y = "Temperature/VWC", color = "Variable")
+
+
+teros_combined <- teros_combined |> 
+  mutate(
+    loc_row = substr(Location, 1, 1),       # A-J 
+    loc_col = as.numeric(substr(Location, 2, 2))  # number
+  )
+
+ggplot(teros_combined, aes(x = loc_col, y = loc_row, fill = Value_temp15)) +
+  geom_tile() +
+  facet_wrap(~ TIMESTAMP) +
+  labs(x = "Columns", y = "Location", fill = "Temp")
 
 
  # EXAMPLE
@@ -444,19 +466,21 @@ clean_c_soil_temp_5 |>
   labs(x = "Date", y = "Value") + 
   theme_minimal()
 
-#soil EC
-f_soil_EC_30 <- read_parquet ("L2_data/TMP_F_2026_soil-EC-30cm_L2_v___.parquet")
-f_soil_EC_15 <- read_parquet("L2_data/TMP_F_2026_soil-EC-15cm_L2_v___.parquet")
-f_soil_EC_5 <- read_parquet("L2_data/TMP_F_2026_soil-EC-5cm_L2_v___.parquet")
+#2026 Soil temp 5cm
+f_soil_temp_5 |>
+  slice_sample(n = 10000) |>
+  ggplot(aes(x = TIMESTAMP, y = Value)) +
+  geom_point(color = "brown") + 
+  labs( title = "Soil Temperature", x = "TimeStamp", y = "Temperature") + 
+  theme_minimal()
 
-clean_f_soil_ec_15 <- f_soil_EC_15 |> 
-  mutate(across
-         (everything(), ~replace_na(., -1)))
-clean_f_soil_ec_15 <- filter(
-  clean_f_soil_ec_15, Value > 1)
-clean_f_soil_ec_15 |> 
-  ggplot(aes(
-    x= TIMESTAMP, y = Value)) + 
-  geom_point() + 
-  theme_classic()
+#just the ones we want to work with 
+f_soil_temp_5 <- f_soil_temp_5 |> select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
 
+#convert to date type and extract the month
+f_soil_temp_5<- f_soil_temp_5 |> 
+  mutate(
+    month_column = as.Date(TIMESTAMP))
+f_soil_temp_5 <- f_soil_temp_5 |> 
+  mutate(
+    month = month(month_column, label = TRUE))
