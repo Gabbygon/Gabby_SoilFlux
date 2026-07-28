@@ -532,3 +532,102 @@ ggplot(f_15_soilcombined, aes(x = TIMESTAMP)) +
   annotate("rect", xmin = flood_start, xmax = flood_end, ymin = -Inf, ymax = Inf, alpha = 0.1, fill = "green") +
   facet_wrap(~ Location) +
   labs(y = "Temperature/EC", color = "Variable")
+
+
+#2026 freshwater soil plot data temp, vwc, and Ec (30cm)
+f_soil_temp_30 <- read_parquet("L2_data/TMP_F_2026_soil-temp-30cm_L2_v___.parquet") 
+f_soil_vwc_30 <- read_parquet("L2_data/TMP_F_2026_soil-vwc-30cm_L2_v___.parquet")  
+f_soil_EC_30 <- read_parquet ("L2_data/TMP_F_2026_soil-EC-30cm_L2_v___.parquet")
+
+#Mergning all of the data 
+f_soil_temp_30 |> 
+  rename(Value_temp30 = Value) |> 
+  left_join(f_soil_vwc_30, 
+            by = c("Plot", "TIMESTAMP", "Instrument_ID", "Sensor_ID", "Location"), 
+            relationship = ("one-to-one") |> 
+            rename(f_soil_vwc_30, Value_vwc30 = Value)) -> f_30_combined
+
+f_soil_temp_30 |> 
+  rename(Value_temp30 = Value) |> 
+  left_join(f_soil_vwc_30 |> rename(Value_vwc30 = Value), 
+            by = c("Plot", "TIMESTAMP", "Instrument_ID", "Sensor_ID", "Location"), 
+            relationship = "one-to-one") -> f_30_combined
+
+
+#only way it wants to join together
+#not working 
+f_soil_vwc_30 |> 
+  rename(Value_vwc30 = Value) -> f_soil_vwc_30
+
+f_soil_temp_30 |> 
+  rename(Value_temp30 = Value) |> 
+  left_join(f_soil_vwc_30, 
+            by = c("Plot", "TIMESTAMP", "Instrument_ID", "Sensor_ID", "Location"), 
+            relationship = "one-to-one") -> f_30_combined
+
+
+f_30_combined |> 
+  left_join(f_soil_EC_30, 
+            by = c("Plot", "TIMESTAMP", "Instrument_ID", "Sensor_ID", "Location"), 
+            relationship = "one-to-one") |> 
+  rename(Value_ec15 = Value) ->
+  f_30_soilcombined
+
+#Other way 
+#KAM addition 28.07.2026
+f_soil_temp_30 %>%
+  rename(Value_temp30 = Value) %>%
+  filter(! is.na(Value_temp30)) -> f_soil1_30
+
+f_soil_EC_30 %>%
+  rename(Value_ec30 = Value) %>%
+  filter(! is.na(Value_ec30)) -> f_soil2_30
+
+f_soil_vwc_30 |> 
+  rename(Value_vwc30 = Value)
+  filter(! is.na(Value_vwc30)) -> f_soil3_30
+  #Value for the fresh water soil plot of 30 cm is all N/A
+  #Will try to work with the saltwater soil plot 
+  
+#working with the saltwater plot (5cm)
+  s_soil_temp_5 <- read_parquet("L2_data/TMP_S_2026_soil-temp-5cm_L2_v___.parquet")
+  s_soil_vwc_5 <- read_parquet("L2_data/TMP_S_2026_soil-vwc-5cm_L2_v___.parquet")
+  s_soil_EC_5 <- read_parquet("L2_data/TMP_S_2026_soil-EC-5cm_L2_v___.parquet")  
+  
+#merging 
+s_soil_temp_5 |> 
+  rename(Value_temp5 = Value) |> 
+  filter(! is.na(Value_temp5)) -> s_soil1 
+
+s_soil_EC_5 |> 
+  rename(Value_EC5 = Value) |> 
+  filter(! is.na(Value_EC5)) -> s_soil2
+
+s_soil_vwc_5 |> 
+  rename(Value_vwc5 = Value) |> 
+  filter(! is.na(Value_vwc5)) -> s_soil3
+
+s_soil1 |> 
+  left_join(s_soil2,
+            by = c("Plot", "TIMESTAMP", "Instrument_ID", "Location")) %>%
+  left_join(s_soil3, 
+            by = c("Plot", "TIMESTAMP", "Instrument_ID", "Location")) -> s_5_soilcombined
+
+  
+#plotting  
+flood_start <- ymd_hms("2026-6-1 00:00:00")  
+flood_end   <- ymd_hms("2026-6-14 23:45:00")  
+
+ggplot(s_5_soilcombined, aes(x = TIMESTAMP)) +
+  geom_line(aes(y = Value_temp5, color = "Temperature")) +
+  geom_line(aes(y = Value_vwc5 * 50, color = "VWC")) +  # rescaled 
+  annotate("rect", xmin = flood_start, xmax = flood_end, ymin = -Inf, ymax = Inf, alpha = 0.1, fill = "green") +
+  facet_wrap(~ Location) +
+  labs(y = "Temperature/VWC", color = "Variable")
+
+ggplot(s_5_soilcombined, aes(x = TIMESTAMP)) +
+  geom_line(aes(y = Value_temp5, color = "Temperature")) +
+  geom_line(aes(y = Value_EC5 / 30, color = "EC")) +  # rescaled 
+  annotate("rect", xmin = flood_start, xmax = flood_end, ymin = -Inf, ymax = Inf, alpha = 0.1, fill = "green") +
+  facet_wrap(~ Location) +
+  labs(y = "Temperature/EC", color = "Variable")
