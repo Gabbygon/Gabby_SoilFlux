@@ -8,9 +8,9 @@ library(tidyverse)
 library(patchwork)
 library(naniar)
 
+#2025 data frame 
 #read in data from soil temp 15 parquet file 
 soil_temp15 <- read_parquet("L2_data/TMP_F_2025_soil-temp-15cm_L2_v2-1.parquet")
-
 
 #Summarizing soil temp file 
 head(soil_temp15)
@@ -171,7 +171,7 @@ soil_temp15 |>
   geom_line(group = 1, linewidth = 1, linetype = 2) +
   geom_errorbar(aes(ymin = mean_value - sd_value, ymax = mean_value + sd_value))
 
-# SOIL volumetric Water Content
+# SOIL volumetric Water Content (2025 data frame)
 # Read in data from soil vwc parquet file
   soil_vwc <- read_parquet("L2_data/TMP_F_2025_soil-vwc-15cm_L2_v2-1.parquet") |> 
   # just like temperature, select only certain columns we care about
@@ -283,26 +283,7 @@ ggplot(teros_combined, aes(x = loc_col, y = loc_row, fill = Value_temp15)) +
   geom_tile() +
   facet_wrap(~ TIMESTAMP) +
   labs(x = "Columns", y = "Location", fill = "Temp")
-
-
- # EXAMPLE
  
-teros_combined
-
- example_temp <- tibble(TS = 1:3, Value = 1:3)
- example_vwc <- tibble(TS = 1:3, Value = 4:6)
- 
- # This doesn't do what we want, because the dataframes BOTH have "Value" columns
- example_temp |> left_join(example_vwc, by = "TS")
- 
- # Prepare datasets for merge
- example_temp <- rename(example_temp, Value_temp = Value)
- example_vwc <- rename(example_vwc, Value_VWC = Value)
- 
- example_temp |>
-   left_join(example_vwc, by = "TS")
- 
-
 #trying to do graphs
  scale_factor <- 42.15
  
@@ -332,7 +313,7 @@ ggplot(
   theme_minimal() + theme(asix.text.x = element_text(angle = 45, hjust= 1), 
                           legend.position = "none")
 
-#reading all of the parquet files 2026 
+#reading all of the parquet files 2026 data 
 #Control soil plot 
 #Soil EC 
 C_soil_EC_30 <- read_parquet("L2_data/TMP_C_2026_soil-EC-30cm_L2_v___.parquet")
@@ -498,8 +479,7 @@ f_soil_temp_15 |>
   left_join(f_soil_vwc_15, 
             by = c("Plot", "TIMESTAMP", "Instrument_ID", "Sensor_ID", "Location"), 
             relationship = "one-to-one") |> 
-  rename(Value_vwc15 = Value) ->
-  f_15_soilcombined
+  rename(Value_vwc15 = Value) -> f_15_soilcombined
 
 f_15_soilcombined |> 
   left_join(f_soil_EC_15, 
@@ -508,8 +488,32 @@ f_15_soilcombined |>
   rename(Value_ec15 = Value) ->
   f_15_soilcombined
 
+#Code above doesn't seem to be working
+
+#KAM addition 28.07.2026
+f_soil_temp_15 %>%
+  rename(Value_temp15 = Value,
+         temp_sensor = Sensor_ID) %>%
+  filter(! is.na(Value_temp15)) -> f_soil1
+
+f_soil_EC_15 %>%
+  rename(Value_ec15 = Value,
+         EC_sensor = Sensor_ID) %>%
+  filter(! is.na(Value_ec15)) -> f_soil2
+
+f_soil_vwc_15 |> 
+  rename(Value_vwc15 = Value,
+         vwc_sensor = Sensor_ID) |> 
+  filter(! is.na(Value_vwc15)) -> f_soil3
+
+f_soil1 |> 
+  left_join(f_soil2,
+          by = c("Plot", "TIMESTAMP", "Instrument_ID", "Location")) %>%
+  left_join(f_soil3, 
+            by = c("Plot", "TIMESTAMP", "Instrument_ID", "Location")) -> f_15_soilcombined
+
 #removing columns  
-f_15_soilcombined <- f_15_soilcombined |> select (-month_column, - month)
+#f_15_soilcombined <- f_15_soilcombined |> select (-month_column, - month)
 
 #plotting relationships 
 flood_start <- ymd_hms("2026-6-1 00:00:00")  
@@ -517,14 +521,14 @@ flood_end   <- ymd_hms("2026-6-14 23:45:00")
 
 ggplot(f_15_soilcombined, aes(x = TIMESTAMP)) +
   geom_line(aes(y = Value_temp15, color = "Temperature")) +
-  geom_line(aes(y = Value_vwc15 * 30, color = "VWC")) +  # rescaled 
+  geom_line(aes(y = Value_vwc15 * 50, color = "VWC")) +  # rescaled 
   annotate("rect", xmin = flood_start, xmax = flood_end, ymin = -Inf, ymax = Inf, alpha = 0.1, fill = "green") +
   facet_wrap(~ Location) +
   labs(y = "Temperature/VWC", color = "Variable")
 
 ggplot(f_15_soilcombined, aes(x = TIMESTAMP)) +
   geom_line(aes(y = Value_temp15, color = "Temperature")) +
-  geom_line(aes(y = Value_ec15 * 50, color = "EC")) +  # rescaled 
+  geom_line(aes(y = Value_ec15 / 10, color = "EC")) +  # rescaled 
   annotate("rect", xmin = flood_start, xmax = flood_end, ymin = -Inf, ymax = Inf, alpha = 0.1, fill = "green") +
   facet_wrap(~ Location) +
   labs(y = "Temperature/EC", color = "Variable")
