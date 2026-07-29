@@ -613,10 +613,13 @@ s_soil1 |>
   left_join(s_soil3, 
             by = c("Plot", "TIMESTAMP", "Instrument_ID", "Location")) -> s_5_soilcombined
 
+bind_rows(s_soil_temp_5, s_soil_EC_5, s_soil_vwc_5) |>
+  filter(!is.na(Value)) |>
+  pivot_wider(names_from = research_name, values_from = Value) -> s_5_combined_long
   
 #plotting  
-flood_start <- ymd_hms("2026-6-1 00:00:00")  
-flood_end   <- ymd_hms("2026-6-14 23:45:00")  
+flood_start <- ymd_hms("2026-6-8 00:00:00")  
+flood_end   <- ymd_hms("2026-6-11 23:45:00")  
 
 ggplot(s_5_soilcombined, aes(x = TIMESTAMP)) +
   geom_line(aes(y = Value_temp5, color = "Temperature")) +
@@ -631,3 +634,7 @@ ggplot(s_5_soilcombined, aes(x = TIMESTAMP)) +
   annotate("rect", xmin = flood_start, xmax = flood_end, ymin = -Inf, ymax = Inf, alpha = 0.1, fill = "green") +
   facet_wrap(~ Location) +
   labs(y = "Temperature/EC", color = "Variable")
+
+s_5_soilcombined |> group_by(Location) |> summarise(mean_temp5 = mean(Value_temp5)) |> 
+  separate(Location, into = c("grid_letter", "grid_number"), sep = 1) |> 
+  ggplot(aes(x = grid_letter, y = grid_number, color = mean_temp5)) + geom_point()
