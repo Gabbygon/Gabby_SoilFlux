@@ -312,7 +312,7 @@ soil_temp15 |>
 #read in data from soil temp 15 parquet file 
 #Soil Temperature 
 C_soil_temp_30 <- read_parquet("L2_data/TMP_C_2026_soil-temp-30cm_L2_v___.parquet")   
-C_soil_temp_15 <- read_parquet("L2_data/TMP_C_2026_soil-temp-15cm_L2_v___.parquet")  
+s_soil_temp_15 <- read_parquet("L2_data/TMP_S_2026_soil-temp-15cm_L2_v___.parquet")  
 C_soil_temp_5 <- read_parquet("L2_data/TMP_C_2026_soil-temp-5cm_L2_v___.parquet") 
 
 head(C_soil_temp_5)
@@ -324,4 +324,14 @@ summary(C_soil_temp_5)
 
 ```
 
+```{r}
+s_soil_temp_15 |> group_by(Location) |> summarise(mean_temp5 = mean(Value, na.rm = TRUE)) |> 
+  separate(Location, into = c("grid_letter", "grid_number"), sep = 1) |> 
+  ggplot(aes(x = grid_letter, y = grid_number, color = mean_temp5)) + 
+  geom_point(size = 3) +
+  scale_color_viridis_c(option = "H", begin = 0.2) +
+  theme_bw() +
+  labs(title = "Saltwater Plot Soil Temperature - 15cm", color = "temperature degC")
+
+```
 
