@@ -327,11 +327,11 @@ summary(C_soil_temp_5)
 ```{r}
 s_soil_temp_15 |> group_by(Location) |> summarise(mean_temp5 = mean(Value, na.rm = TRUE)) |> 
   separate(Location, into = c("grid_letter", "grid_number"), sep = 1) |> 
-  ggplot(aes(x = grid_letter, y = grid_number, color = mean_temp5)) + 
-  geom_point(size = 3) +
-  scale_color_viridis_c(option = "H", begin = 0.2) +
+  ggplot(aes(x = grid_letter, y = grid_number, fill = mean_temp5)) + 
+  geom_tile() +
+  scale_fill_viridis_c(option = "H", begin = 0.2) +
   theme_bw() +
-  labs(title = "Saltwater Plot Soil Temperature - 15cm", color = "temperature degC")
+  labs(title = "Saltwater Plot Soil Temperature - 15cm", fill = "temperature degC")
 
 ```
 
