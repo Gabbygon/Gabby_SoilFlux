@@ -635,6 +635,13 @@ ggplot(s_5_soilcombined, aes(x = TIMESTAMP)) +
   facet_wrap(~ Location) +
   labs(y = "Temperature/EC", color = "Variable")
 
-s_5_soilcombined |> group_by(Location) |> summarise(mean_temp5 = mean(Value_temp5)) |> 
+s_soil_temp_15 |> group_by(Location) |> summarise(mean_temp5 = mean(Value, na.rm = TRUE)) |> 
   separate(Location, into = c("grid_letter", "grid_number"), sep = 1) |> 
-  ggplot(aes(x = grid_letter, y = grid_number, color = mean_temp5)) + geom_point()
+  ggplot(aes(x = grid_letter, y = grid_number, color = mean_temp5)) + 
+  geom_point(size = 3) +
+  scale_color_viridis_c(option = "H", begin = 0.2) +
+  theme_bw() +
+  labs(title = "Saltwater Plot Soil Temperature - 15cm", color = "temperature degC")
+
+
+
