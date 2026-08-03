@@ -367,6 +367,13 @@ s_soil_vwc_15 <- read_parquet("L2_data/TMP_S_2026_soil-vwc-15cm_L2_v___.parquet"
 s_soil_vwc_5 <- read_parquet("L2_data/TMP_S_2026_soil-vwc-5cm_L2_v___.parquet")
 
 
+#soil_depths <- c(5, 15, 30)
+#soil_temp_data <- list()
+#for(sd în soil_depths) {
+  #filename <- paste0("L2_data/TMP_F_2026_soil-temp-", sd, "cm_L2_v__.parquet")
+  #soil_temp_data[[sd]] <- read_parquet(filename)}
+#combined_data <- bind_rows(soil_temp_data)
+
 #Visualizing N/As
 vis_miss(s_soil_vwc_5)
 s_soil_vwc_5 |> drop_na(Value)
@@ -407,9 +414,9 @@ summary(C_soil_temp_5)
 
 
 # Select just the columns we want to work with 
-C_soil_temp_5 <- soil_temp15 |> select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
-C_soil_temp_15 <- soil_temp15 |> select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
-C_soil_temp_30 <- soil_temp15 |> select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
+C_soil_temp_5 <- C_soil_temp_5 |> select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
+C_soil_temp_15 <- C_soil_temp_15 |> select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
+C_soil_temp_30 <- C_soil_temp_30 |> select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
 
 # Randomly sub_sample the data to make plotting faster
 C_soil_temp_15 |>
@@ -516,22 +523,24 @@ f_soil1 |>
 #f_15_soilcombined <- f_15_soilcombined |> select (-month_column, - month)
 
 #plotting relationships 
-flood_start <- ymd_hms("2026-6-1 00:00:00")  
-flood_end   <- ymd_hms("2026-6-14 23:45:00")  
+flood_start <- ymd_hms("2026-6-8 00:00:00")  
+flood_end   <- ymd_hms("2026-6-11 23:45:00")  
 
+#Temperature and vwc
 ggplot(f_15_soilcombined, aes(x = TIMESTAMP)) +
   geom_line(aes(y = Value_temp15, color = "Temperature")) +
-  geom_line(aes(y = Value_vwc15 * 50, color = "VWC")) +  # rescaled 
+  geom_line(aes(y = Value_vwc15 * 50, color = "VWC")) + theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
   annotate("rect", xmin = flood_start, xmax = flood_end, ymin = -Inf, ymax = Inf, alpha = 0.1, fill = "green") +
   facet_wrap(~ Location) +
   labs(y = "Temperature/VWC", color = "Variable")
 
+#Temperature and EC
 ggplot(f_15_soilcombined, aes(x = TIMESTAMP)) +
   geom_line(aes(y = Value_temp15, color = "Temperature")) +
-  geom_line(aes(y = Value_ec15 / 10, color = "EC")) +  # rescaled 
+  geom_line(aes(y = Value_ec15 / 10, color = "EC")) + theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
   annotate("rect", xmin = flood_start, xmax = flood_end, ymin = -Inf, ymax = Inf, alpha = 0.1, fill = "green") +
-  facet_wrap(~ Location) +
-  labs(y = "Temperature/EC", color = "Variable")
+  facet_wrap(~ Location)  + 
+  labs(y = "Temperature/EC", color = "Variable") 
 
 
 #2026 freshwater soil plot data temp, vwc, and Ec (30cm)
@@ -623,25 +632,66 @@ flood_end   <- ymd_hms("2026-6-11 23:45:00")
 
 ggplot(s_5_soilcombined, aes(x = TIMESTAMP)) +
   geom_line(aes(y = Value_temp5, color = "Temperature")) +
-  geom_line(aes(y = Value_vwc5 * 50, color = "VWC")) +  # rescaled 
+  geom_line(aes(y = Value_vwc5 * 50, color = "VWC")) +  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
   annotate("rect", xmin = flood_start, xmax = flood_end, ymin = -Inf, ymax = Inf, alpha = 0.1, fill = "green") +
   facet_wrap(~ Location) +
   labs(y = "Temperature/VWC", color = "Variable")
 
 ggplot(s_5_soilcombined, aes(x = TIMESTAMP)) +
   geom_line(aes(y = Value_temp5, color = "Temperature")) +
-  geom_line(aes(y = Value_EC5 / 30, color = "EC")) +  # rescaled 
+  geom_line(aes(y = Value_EC5 / 30, color = "EC")) +  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
   annotate("rect", xmin = flood_start, xmax = flood_end, ymin = -Inf, ymax = Inf, alpha = 0.1, fill = "green") +
   facet_wrap(~ Location) +
   labs(y = "Temperature/EC", color = "Variable")
 
+#Saltwater special plot 15cm-5
 s_soil_temp_15 |> group_by(Location) |> summarise(mean_temp5 = mean(Value, na.rm = TRUE)) |> 
   separate(Location, into = c("grid_letter", "grid_number"), sep = 1) |> 
   ggplot(aes(x = grid_letter, y = grid_number, color = mean_temp5)) + 
   geom_point(size = 3) +
   scale_color_viridis_c(option = "H", begin = 0.2) +
   theme_bw() +
-  labs(title = "Saltwater Plot Soil Temperature - 15cm", color = "temperature degC")
+  labs(title = "Saltwater Plot Soil Temperature - 15cm", color = "temperature C")
 
+#calculating the coefficient of variability
+sd(s_soil_temp_15$Value, na.rm = TRUE) / mean(s_soil_temp_15$Value, na.rm = TRUE) -> Cv
 
+#Tiles
+s_soil_temp_15 |> group_by(Location) |> summarise(mean_temp5 = mean(Value, na.rm = TRUE)) |> 
+  separate(Location, into = c("grid_letter", "grid_number"), sep = 1) |> 
+  ggplot(aes(x = grid_letter, y = grid_number, fill = mean_temp5)) + 
+  geom_tile() +
+  scale_fill_viridis_c(option = "H", begin = 0.2) +
+  theme_bw() +
+  labs(title = "Saltwater Plot Soil Temperature - 15cm", fill = "temperature C")
 
+#
+s_soil_temp_15 <- read_parquet("L2_data/TMP_S_2026_soil-temp-15cm_L2_v___.parquet")
+s_soil_EC_15 <- read_parquet("L2_data/TMP_S_2026_soil-EC-15cm_L2_v___.parquet")   
+s_soil_vwc_15 <- read_parquet("L2_data/TMP_S_2026_soil-vwc-15cm_L2_v___.parquet")
+
+#
+s_soil_temp_15 |> 
+  rename(Value_temp15 = Value) |> 
+  filter(! is.na(Value_temp15)) -> s_soilt1 
+
+s_soil_EC_15 |> 
+  rename(Value_EC15 = Value) |> 
+  filter(! is.na(Value_EC15)) -> s_soilt2
+
+s_soil_vwc_15 |> 
+  rename(Value_vwc15 = Value) |> 
+  filter(! is.na(Value_vwc15)) -> s_soilt3
+
+#
+bind_rows(s_soil_temp_15, s_soil_EC_15, s_soil_vwc_15) |>
+  filter(!is.na(Value)) |>
+  pivot_wider(names_from = research_name, values_from = Value) -> s_15_combined_long
+
+#plotting  
+ggplot(s_15_combined_long, aes(x = TIMESTAMP)) +
+  geom_line(aes(y = Value_temp15, color = "Temperature")) +
+  geom_line(aes(y = Value_vwc15 * 50, color = "VWC")) +  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
+  annotate("rect", xmin = flood_start, xmax = flood_end, ymin = -Inf, ymax = Inf, alpha = 0.1, fill = "green") +
+  facet_wrap(~ Location) +
+  labs(y = "Temperature/VWC", color = "Variable")
