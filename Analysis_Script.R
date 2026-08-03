@@ -9,12 +9,11 @@ library(lubridate)
 library(tidyverse)
 library(patchwork)
 library(naniar)
-
 library(compasstools)
 
 # ------------------------------------------------------
 # ------ READ IN SOIL TEMP, VWC, AND EC AND PLOT/SUMMARIZE
-# ------------------------------------------------------
+# ------------------------------------------------------# --------Plot----------------------------------------------
 
 # We use the "compasstools" package (loaded above) to load data
 # Specifically, compasstools::read_L2_variable()
@@ -49,9 +48,9 @@ soil_temp15 |>
 #take the mean of the value column
 soil_temp15 |> 
   mutate(Month = month(TIMESTAMP)) |> 
-  group_by(Month, Sensor_ID) |>                             
+  group_by(Month, Sensor_ID, Plot) |>                             
   summarize(mean_temp = mean(Value, na.rm = TRUE)) |>       
-  ggplot(aes(x = Month, y = mean_temp, group = Sensor_ID)) +  
+  ggplot(aes(x = Month, y = mean_temp, group = Sensor_ID, color = Plot)) +  
   geom_line() + 
   geom_point()
 
@@ -480,3 +479,15 @@ ggplot(s_15_combined_long, aes(x = TIMESTAMP)) +
   annotate("rect", xmin = flood_start, xmax = flood_end, ymin = -Inf, ymax = Inf, alpha = 0.1, fill = "green") +
   facet_wrap(~ Location) +
   labs(y = "Temperature/VWC", color = "Variable")
+
+
+#_______
+#Trying to make the bar chart more appealing 
+soil_temp15 |> 
+  mutate(Month = month(TIMESTAMP)) |> 
+  group_by(Month) |> 
+  summarize(mean_temp = mean(Value, na.rm = TRUE)) |> 
+  ggplot(aes(x = Month, y = mean_temp)) +  
+  geom_col()
+
+ggplot(subset )
