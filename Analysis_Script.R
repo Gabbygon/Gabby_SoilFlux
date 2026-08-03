@@ -1,3 +1,5 @@
+# Summer TEMPEST soil analysis
+# Gabby Gonzalez 2026
 
 library(arrow)
 library(dplyr)
@@ -8,9 +10,15 @@ library(tidyverse)
 library(patchwork)
 library(naniar)
 
-#2025 data frame 
-#read in data from soil temp 15 parquet file 
-soil_temp15 <- read_parquet("L2_data/TMP_F_2025_soil-temp-15cm_L2_v2-1.parquet")
+library(compasstools)
+
+# ------------------------------------------------------
+# ------ READ IN SOIL TEMP, VWC, AND EC AND PLOT/SUMMARIZE
+# ------------------------------------------------------
+
+# We use the "compasstools" package (loaded above) to load data
+# Specifically, compasstools::read_L2_variable()
+soil_temp15 <- read_L2_variable("soil-temp-15cm", path = "L2_data/")
 
 #Summarizing soil temp file 
 head(soil_temp15)
@@ -21,14 +29,19 @@ print(colnames(soil_temp15))
 summary(soil_temp15)
 
 # Select just the columns we want to work with 
-soil_temp15 <- soil_temp15 |> select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
+soil_temp15 <- soil_temp15 |> 
+  select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
 
 # Line Chart of all the data
 # Randomly sub_sample the data to make plotting faster
 soil_temp15 |>
-  slice_sample(n = 10000) |>
-  ggplot(aes(x = TIMESTAMP, y = Value)) +
-  geom_point(color = "brown") + 
+  # this dataset is VERY large so just select 1000 random rows to plot
+  slice_sample(n = 1000) |>
+  ggplot(aes(x = TIMESTAMP, y = Value, color = Plot)) +
+  geom_point() + 
+  # add a 'smoother' -- a smooth line that follows the data to help
+  # audience see trend
+  geom_smooth(linetype = 2) +
   labs( title = "Soil Temperature", x = "TimeStamp", y = "Temperature") + 
   theme_minimal()
 
@@ -63,7 +76,7 @@ ggplot(
   soil_temp15, aes(x = month, y = Value, group = month, fill = as.factor(month))) + 
   geom_boxplot() + 
   labs(title = "By Month", x = "Month", y = "Temperature") + 
-  theme_minimal() + theme(asix.text.x = element_text(angle = 45, hjust= 1), 
+  theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust= 1), 
   legend.position = "none")
 
 #graph of temp and month with colors
@@ -83,98 +96,24 @@ ggplot(
   labs(title = "Temperature by Month", y = "Temperature") + 
   theme_minimal()
 
-#patchwork of each month for box plot 
-m1 <- ggplot(
-  filter(soil_temp15, month == "Jan"), 
-  aes( x = month, y = Value)) + 
-  geom_boxplot() + 
-  labs(title= "January")
-
-m2 <- ggplot(
-  filter(soil_temp15, month == "Feb"), 
-  aes( x = month, y = Value)) + 
-  geom_boxplot() + 
-  labs(title= "February")
-
-m3 <- ggplot(
-   filter(soil_temp15, month == "Mar"), 
-   aes( x = month, y = Value)) + 
-   geom_boxplot() + 
-   labs(title= "March")
-
-m4 <- ggplot(
-   filter(soil_temp15, month == "Apr"), 
-   aes( x = month, y = Value)) + 
-   geom_boxplot() + 
-   labs(title= "April")
-
-m5 <- ggplot(
-    filter(soil_temp15, month == "May"), 
-    aes( x = month, y = Value)) + 
-    geom_boxplot() + 
-    labs(title= "May")
-
-m6 <- ggplot(
-    filter(soil_temp15, month == "Jun"), 
-    aes( x = month, y = Value)) + 
-    geom_boxplot() + 
-    labs(title= "June")
-
-m7 <- ggplot(
-    filter(soil_temp15, month == "Jul"), 
-    aes( x = month, y = Value)) + 
-    geom_boxplot() + 
-    labs(title= "July")
-
-m8 <- ggplot(
-    filter(soil_temp15, month == "Aug"), 
-    aes( x = month, y = Value)) + 
-    geom_boxplot() + 
-    labs(title= "August")
-
-m9 <- ggplot(
-    filter(soil_temp15, month == "Sep"), 
-    aes( x = month, y = Value)) + 
-    geom_boxplot() + 
-    labs(title= "September")
-
-m10 <- ggplot(
-    filter(soil_temp15, month == "Oct"), 
-    aes( x = month, y = Value)) + 
-    geom_boxplot() + 
-    labs(title= "October")
-
-m11 <- ggplot(
-    filter(soil_temp15, month == "Nov"), 
-    aes( x = month, y = Value)) + 
-    geom_boxplot() + 
-    labs(title= "November")
-
-m12 <- ggplot(
-    filter(soil_temp15, month == "Dec"), 
-    aes( x = month, y = Value)) + 
-    geom_boxplot() + 
-    labs(title= "December")
-
-#Combining the plots into one singular graph 
-m1 + m2 + m3 + m4 + m5 + m6 + m7 + m8 + m9 + m10 + m11 + m12 + 
-  plot_layout(ncol = 6)
-
 #per-month variability 
 soil_temp15 |> 
-  group_by(month) |>
+  group_by(Plot, month) |>
   # compute mean and s.d. for each month
   summarise(mean_value = mean(Value, na.rm = TRUE), 
             sd_value = sd(Value, na.rm = TRUE)) |>
-  ggplot(aes(x = month, y = mean_value)) +
+  ggplot(aes(x = month, y = mean_value, color = Plot)) +
   geom_point() + 
-  geom_line(group = 1, linewidth = 1, linetype = 2) +
+  geom_line(linetype = 2, aes(group = Plot)) +
   geom_errorbar(aes(ymin = mean_value - sd_value, ymax = mean_value + sd_value))
 
 # SOIL volumetric Water Content (2025 data frame)
 # Read in data from soil vwc parquet file
-  soil_vwc <- read_parquet("L2_data/TMP_F_2025_soil-vwc-15cm_L2_v2-1.parquet") |> 
-  # just like temperature, select only certain columns we care about
+
+soil_vwc <- read_L2_variable("soil-vwc-15cm", path = "L2_data/") |> 
+  select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
+
+f_soil_EC_15 <- read_L2_variable("soil-EC-15cm", path = "L2_data/") |> 
   select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
 
 #Summarizing swc file 
@@ -191,7 +130,7 @@ soil_vwc |>
   slice_sample(n = 10000) |>
   ggplot(aes(x = TIMESTAMP, y = Value)) +
   geom_point(color = "brown") + 
-  labs( title = "Soil VWC", x = "TimeStamp", y = "Columetric water content") + 
+  labs( title = "Soil VWC", x = "TimeStamp", y = "Volumetric water content") + 
   theme_minimal()
 
 #Time and value 
@@ -210,7 +149,7 @@ soil_vwc <- soil_vwc |>
   mutate(
     month = month(month_column, label = TRUE))
 
-#grpah of each month for vwc
+#graph of each month for vwc
 ggplot(
   soil_vwc, aes(x = month, y = Value)) + 
   geom_boxplot() + 
@@ -247,10 +186,10 @@ soil_temp15 |>
             by = c("Plot", "TIMESTAMP", "Instrument_ID", "Sensor_ID", "Location"), 
             relationship = "one-to-one") |> 
   # ...and now rename the vwc value column
-  rename(Value_vwc15 = Value) ->
+  rename(Value_vwc15 = Value) |> 
+  select (-month_column.x, -month_column.y, -month.x, -month.y) ->
   teros_combined
 
-teros_combined <- teros_combined |>  select (-month_column.x, -month_column.y, -month.x, -month.y)
 
 teros_combined |> 
   left_join(f_soil_EC_15, 
@@ -259,18 +198,23 @@ teros_combined |>
   rename(Value_ec15 = Value) ->
   teros_combined
 
-teros_combined <- teros_combined |>  select (-research_name, -N_avg, -N_drop, -Value_MAC)
+# ------------------------------------------------------
+# ------ ANALYZE RELATIONSHIPS BETWEEN VARIABLES
+# ------------------------------------------------------
 
 #plotting relationships 
-flood_start <- ymd_hms("2026-1-1 00:00:00")  
-flood_end   <- ymd_hms("2026-12-31 23:45:00")  
+flood_start <- ymd_hms("2024-06-11 00:00:00")  
+flood_end   <- ymd_hms("2024-06-13 23:45:00")  
 
-ggplot(teros_combined, aes(x = TIMESTAMP)) +
+teros_combined |> 
+  slice_sample(n = 1000) |> 
+  ggplot(aes(x = TIMESTAMP)) +
   geom_line(aes(y = Value_temp15, color = "Temperature")) +
   geom_line(aes(y = Value_vwc15 * 70, color = "VWC")) +  # rescaled 
   annotate("rect", xmin = flood_start, xmax = flood_end, ymin = -Inf, ymax = Inf, alpha = 0.1, fill = "green") +
   facet_wrap(~ Location) +
-  labs(y = "Temperature/VWC", color = "Variable")
+  labs(y = "Temperature/VWC", color = "Variable") +
+  theme(axis.text.x = element_text(angle = 90))
 
 
 teros_combined <- teros_combined |> 
@@ -279,15 +223,27 @@ teros_combined <- teros_combined |>
     loc_col = as.numeric(substr(Location, 2, 2))  # number
   )
 
-ggplot(teros_combined, aes(x = loc_col, y = loc_row, fill = Value_temp15)) +
+# Tile (heat map) plots of soil temperature
+
+teros_combined |> 
+  # compute the quarter of the year, then...
+  mutate(Quarter = lubridate::quarter(TIMESTAMP)) |> 
+  # ...for each location in each plot...
+  group_by(loc_row, loc_col, Quarter, Plot) |> 
+  # ...compute the average temperature by quarter
+  summarise(Value_temp15 = mean(Value_temp15)) |>
+  # ...and plot
+  ggplot(aes(x = loc_col, y = loc_row, fill = Value_temp15)) +
   geom_tile() +
-  facet_wrap(~ TIMESTAMP) +
+  facet_grid(Quarter ~ Plot) +
   labs(x = "Columns", y = "Location", fill = "Temp")
  
 #trying to do graphs
  scale_factor <- 42.15
  
-  ggplot(teros_combined, aes(x = TIMESTAMP)) +
+ teros_combined |> 
+   slice_sample(n = 1000) |> 
+   ggplot(aes(x = TIMESTAMP)) +
    geom_point(aes(y = Value_temp15), color = "red", alpha = 0.05, size = 1) +
    geom_point(aes(y = Value_vwc15 * scale_factor), color = "blue", alpha = 0.05, size = 1) +
    geom_smooth(aes(y = Value_temp15), method = "lm", se = FALSE, color = "red") +
@@ -297,7 +253,9 @@ ggplot(teros_combined, aes(x = loc_col, y = loc_row, fill = Value_temp15)) +
    labs(title = "Soil Temperature and Water Content Over Time", x = "Timestamp") +
    theme_minimal()
   
-  
+ 
+ 
+ 
 ggplot(
     teros_combined, aes(x = month, y = Value_vwc15, group = month, fill = as.factor(month))) + 
     geom_boxplot() + 
@@ -313,66 +271,12 @@ ggplot(
   theme_minimal() + theme(asix.text.x = element_text(angle = 45, hjust= 1), 
                           legend.position = "none")
 
-#reading all of the parquet files 2026 data 
-#Control soil plot 
-#Soil EC 
-C_soil_EC_30 <- read_parquet("L2_data/TMP_C_2026_soil-EC-30cm_L2_v___.parquet")
-C_soil_EC_15 <- read_parquet("L2_data/TMP_C_2026_soil-EC-15cm_L2_v___.parquet")
-C_soil_EC_5 <- read_parquet("L2_data/TMP_C_2026_soil-EC-5cm_L2_v___.parquet")
-#Soil salinity
-C_soil_sal_30 <- read_parquet("L2_data/TMP_C_2026_soil-salinity-30cm_L2_v___.parquet")
-C_soil_sal_15 <- read_parquet("L2_data/TMP_C_2026_soil-salinity-15cm_L2_v___.parquet")
-C_soil_sal_5 <- read_parquet("L2_data/TMP_C_2026_soil-salinity-5cm_L2_v___.parquet")
-#Soil Temperature 
-C_soil_temp_30 <- read_parquet("L2_data/TMP_C_2026_soil-temp-30cm_L2_v___.parquet")   
-C_soil_temp_15 <- read_parquet("L2_data/TMP_C_2026_soil-temp-15cm_L2_v___.parquet")  
-C_soil_temp_5 <- read_parquet("L2_data/TMP_C_2026_soil-temp-5cm_L2_v___.parquet")   
-#Soil VWC
-c_soil_vwc_30 <- read_parquet("L2_data/TMP_C_2026_soil-vwc-30cm_L2_v___.parquet")
-c_soil_vwc_15 <- read_parquet("L2_data/TMP_C_2026_soil-vwc-15cm_L2_v___.parquet")
-c_soil_vwc_5 <- read_parquet("L2_data/TMP_C_2026_soil-vwc-5cm_L2_v___.parquet")
 
-#Freshwater soil plot
-#soil EC
-f_soil_EC_30 <- read_parquet ("L2_data/TMP_F_2026_soil-EC-30cm_L2_v___.parquet")
-f_soil_EC_15 <- read_parquet("L2_data/TMP_F_2026_soil-EC-15cm_L2_v___.parquet")
-f_soil_EC_5 <- read_parquet("L2_data/TMP_F_2026_soil-EC-5cm_L2_v___.parquet")
-#Soil salinity 
-f_soil_sal_30 <- read_parquet("L2_data/TMP_F_2026_soil-salinity-30cm_L2_v___.parquet")
-f_soil_sal_15 <- read_parquet("L2_data/TMP_F_2026_soil-salinity-15cm_L2_v___.parquet")
-#Soil Temperature
-f_soil_temp_30 <- read_parquet("L2_data/TMP_F_2026_soil-temp-30cm_L2_v___.parquet") 
-f_soil_temp_15 <- read_parquet("L2_data/TMP_F_2026_soil-temp-15cm_L2_v___.parquet") 
-f_soil_temp_5 <- read_parquet("L2_data/TMP_F_2026_soil-temp-5cm_L2_v___.parquet") 
-#Soil VWC
-f_soil_vwc_30 <- read_parquet("L2_data/TMP_F_2026_soil-vwc-30cm_L2_v___.parquet")  
-f_soil_vwc_15 <- read_parquet("L2_data/TMP_F_2026_soil-vwc-15cm_L2_v___.parquet")  
-
-#Saltwater Plot 
-#Soil EC
-s_soil_EC_30 <- read_parquet("L2_data/TMP_S_2026_soil-EC-30cm_L2_v___.parquet")      
-s_soil_EC_15 <- read_parquet("L2_data/TMP_S_2026_soil-EC-15cm_L2_v___.parquet")   
-s_soil_EC_5 <- read_parquet("L2_data/TMP_S_2026_soil-EC-5cm_L2_v___.parquet")  
-#Soil salinity
-s_soil_sal_30 <- read_parquet("L2_data/TMP_S_2026_soil-salinity-30cm_L2_v___.parquet")
-s_soil_sal_15 <- read_parquet("L2_data/TMP_S_2026_soil-salinity-15cm_L2_v___.parquet")
-s_soil_sal_5 <- read_parquet("L2_data/TMP_S_2026_soil-salinity-5cm_L2_v___.parquet")
-#Soil temp 
-s_soil_temp_30 <- read_parquet("L2_data/TMP_S_2026_soil-temp-30cm_L2_v___.parquet")
-s_soil_temp_15 <- read_parquet("L2_data/TMP_S_2026_soil-temp-15cm_L2_v___.parquet")
-s_soil_temp_5 <- read_parquet("L2_data/TMP_S_2026_soil-temp-5cm_L2_v___.parquet")
-#soil VWC 
-s_soil_vwc_30 <- read_parquet("L2_data/TMP_S_2026_soil-vwc-30cm_L2_v___.parquet")
-s_soil_vwc_15 <- read_parquet("L2_data/TMP_S_2026_soil-vwc-15cm_L2_v___.parquet")
-s_soil_vwc_5 <- read_parquet("L2_data/TMP_S_2026_soil-vwc-5cm_L2_v___.parquet")
+#########################################
+# BEN AND GABBY GOT TO HERE -- 
+#########################################
 
 
-#soil_depths <- c(5, 15, 30)
-#soil_temp_data <- list()
-#for(sd în soil_depths) {
-  #filename <- paste0("L2_data/TMP_F_2026_soil-temp-", sd, "cm_L2_v__.parquet")
-  #soil_temp_data[[sd]] <- read_parquet(filename)}
-#combined_data <- bind_rows(soil_temp_data)
 
 #Visualizing N/As
 vis_miss(s_soil_vwc_5)
@@ -397,127 +301,8 @@ s_soil_vwc5 |>
 df_clean |> ggplot(aes(x = TIMESTAMP, y = Value)) + geom_point(color = "brown")
 
 
-#________________
-#2026 Soil temp
-#read in data from soil temp 15 parquet file 
-#Soil Temperature 
-C_soil_temp_30 <- read_parquet("L2_data/TMP_C_2026_soil-temp-30cm_L2_v___.parquet")   
-C_soil_temp_15 <- read_parquet("L2_data/TMP_C_2026_soil-temp-15cm_L2_v___.parquet")  
-C_soil_temp_5 <- read_parquet("L2_data/TMP_C_2026_soil-temp-5cm_L2_v___.parquet") 
-
-head(C_soil_temp_5)
-names(C_soil_temp_5)
-dim(C_soil_temp_5)
-str(C_soil_temp_5)
-print(colnames(C_soil_temp_5))
-summary(C_soil_temp_5)
 
 
-# Select just the columns we want to work with 
-C_soil_temp_5 <- C_soil_temp_5 |> select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
-C_soil_temp_15 <- C_soil_temp_15 |> select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
-C_soil_temp_30 <- C_soil_temp_30 |> select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
-
-# Randomly sub_sample the data to make plotting faster
-C_soil_temp_15 |>
-  slice_sample(n = 10000) |>
-  ggplot(aes(x = TIMESTAMP, y = Value)) +
-  geom_point(color = "brown") + 
-  labs( title = "Soil Temperature", x = "TimeStamp", y = "Temperature") + 
-  theme_minimal()
-
-filter(C_soil_temp_15, !is.na(Value))
-C_soil_temp_15 |> ggplot(aes(x = TIMESTAMP, y = Value)) + geom_point(color = "red")
-
-C_soil_temp_5$TIMESTAMP <- as.Date(C_soil_temp_5$TIMESTAMP, format = "%Y-%m-%d")
-clean_c_soil_temp_5 <- C_soil_temp_5 |> filter(!is.na(Value))
-
-ggplot(
-  clean_c_soil_temp_5, aes(
-    x = TIMESTAMP, y = Value)) + 
-  geom_line() + 
-  labs(x = "Date", y = "Value", title = "Tempetature over time") +
-  theme_minimal()
-
-ggplot(clean_c_soil_temp_5 , aes(x = TIMESTAMP, y = Value)) + 
-  geom_line() +
-  scale_x_date(date_breaks = "1 week", date_labels = "%b %d") + 
-  labs(x = "Date", y = "Value") + theme_minimal()
-
-clean_c_soil_temp_5 |>  
-  slice_sample(n = 100) |> 
-  ggplot(
-    clean_c_soil_temp_5 , aes(x = TIMESTAMP, y = Value)) + 
-  geom_line() +
-  scale_x_date(
-    date_breaks = "1 week", date_labels = "%b %d") + 
-  labs(x = "Date", y = "Value") + 
-  theme_minimal()
-
-#2026 Soil temp 5cm
-f_soil_temp_5 |>
-  slice_sample(n = 10000) |>
-  ggplot(aes(x = TIMESTAMP, y = Value)) +
-  geom_point(color = "brown") + 
-  labs( title = "Soil Temperature", x = "TimeStamp", y = "Temperature") + 
-  theme_minimal()
-
-#just the ones we want to work with 
-f_soil_temp_5 <- f_soil_temp_5 |> select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
-
-#convert to date type and extract the month
-f_soil_temp_5<- f_soil_temp_5 |> 
-  mutate(
-    month_column = as.Date(TIMESTAMP))
-f_soil_temp_5 <- f_soil_temp_5 |> 
-  mutate(
-    month = month(month_column, label = TRUE))
-
-
-#Restarting in a more organized way 
-#2026 freshwater soil plot data temp, vwc, and Ec (15cm)
-f_soil_temp_15 <- f_soil_temp_5 |> select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
-f_soil_vwc_15 <- f_soil_vwc_15 |> select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
-f_soil_EC_15 <- f_soil_EC_15 |> select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
-
-# Merge the data
-f_soil_temp_15 |> 
-  rename(Value_temp15 = Value) |> 
-  left_join(f_soil_vwc_15, 
-            by = c("Plot", "TIMESTAMP", "Instrument_ID", "Sensor_ID", "Location"), 
-            relationship = "one-to-one") |> 
-  rename(Value_vwc15 = Value) -> f_15_soilcombined
-
-f_15_soilcombined |> 
-  left_join(f_soil_EC_15, 
-            by = c("Plot", "TIMESTAMP", "Instrument_ID", "Sensor_ID", "Location"), 
-            relationship = "one-to-one") |> 
-  rename(Value_ec15 = Value) ->
-  f_15_soilcombined
-
-#Code above doesn't seem to be working
-
-#KAM addition 28.07.2026
-f_soil_temp_15 %>%
-  rename(Value_temp15 = Value,
-         temp_sensor = Sensor_ID) %>%
-  filter(! is.na(Value_temp15)) -> f_soil1
-
-f_soil_EC_15 %>%
-  rename(Value_ec15 = Value,
-         EC_sensor = Sensor_ID) %>%
-  filter(! is.na(Value_ec15)) -> f_soil2
-
-f_soil_vwc_15 |> 
-  rename(Value_vwc15 = Value,
-         vwc_sensor = Sensor_ID) |> 
-  filter(! is.na(Value_vwc15)) -> f_soil3
-
-f_soil1 |> 
-  left_join(f_soil2,
-          by = c("Plot", "TIMESTAMP", "Instrument_ID", "Location")) %>%
-  left_join(f_soil3, 
-            by = c("Plot", "TIMESTAMP", "Instrument_ID", "Location")) -> f_15_soilcombined
 
 #removing columns  
 #f_15_soilcombined <- f_15_soilcombined |> select (-month_column, - month)
