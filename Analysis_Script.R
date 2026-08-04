@@ -106,13 +106,10 @@ soil_temp15 |>
   geom_line(linetype = 2, aes(group = Plot)) +
   geom_errorbar(aes(ymin = mean_value - sd_value, ymax = mean_value + sd_value))
 
-# SOIL volumetric Water Content (2025 data frame)
+# SOIL volumetric Water Content 
 # Read in data from soil vwc parquet file
 
 soil_vwc <- read_L2_variable("soil-vwc-15cm", path = "L2_data/") |> 
-  select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
-
-f_soil_EC_15 <- read_L2_variable("soil-EC-15cm", path = "L2_data/") |> 
   select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
 
 #Summarizing swc file 
@@ -123,13 +120,18 @@ str(soil_vwc)
 print(colnames(soil_vwc))
 summary(soil_vwc)
 
+
 # Line Chart of all the data
 # Randomly sub_sample the data to make plotting faster
 soil_vwc |>
-  slice_sample(n = 10000) |>
+  # this dataset is VERY large so just select 1000 random rows to plot
+  slice_sample(n = 1000) |>
   ggplot(aes(x = TIMESTAMP, y = Value, color = Plot)) +
   geom_point() + 
-  labs( title = "Soil VWC", x = "TimeStamp", y = "Volumetric water content") + 
+  # add a 'smoother' -- a smooth line that follows the data to help
+  # audience see trend
+  geom_smooth(linetype = 2) +
+  labs( title = "Soil VWC", x = "TimeStamp", y = "Volumetric Water content") + 
   theme_minimal()
 
 #convert to date type and extract the month for wvc
@@ -158,14 +160,6 @@ ggplot(
   labs(title = "Moisture by Month", y = "Temperature", x = "Month") + 
   theme_minimal()
 
-#bar graph of all data vwc 
-soil_vwc |> 
-  mutate(Month = month(TIMESTAMP)) |> 
-  group_by(Month) |> 
-  summarize(mean_temp = mean(Value, na.rm = TRUE)) |> 
-  ggplot(aes(x = Month, y = mean_temp)) +  
-  geom_col()
-
 #graph with colors 
 soil_vwc |> 
   slice_sample(n = 1000) |> 
@@ -174,6 +168,68 @@ soil_vwc |>
   scale_color_gradient2(low = "brown", high = "blue",mid ="brown", midpoint = 5, limits = c(0, 30)) +
   labs(title = "By Month", x = "Month", y = "VWC") + 
   theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust= 1))
+
+# SOIL EC 
+# Read in data from soil EC parquet file
+
+f_soil_EC_15 <- read_L2_variable("soil-EC-15cm", path = "L2_data/") |> 
+  select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
+
+#Summarizing EC file 
+head(f_soil_EC_15)
+names(f_soil_EC_15)
+dim(f_soil_EC_15)
+str(f_soil_EC_15)
+print(colnames(f_soil_EC_15))
+summary(f_soil_EC_15)
+
+# Line Chart of all the data
+# Randomly sub_sample the data to make plotting faster
+f_soil_EC_15 |>
+  # this dataset is VERY large so just select 1000 random rows to plot
+  slice_sample(n = 1000) |>
+  ggplot(aes(x = TIMESTAMP, y = Value, color = Plot)) +
+  geom_point() + 
+  # add a 'smoother' -- a smooth line that follows the data to help
+  # audience see trend
+  geom_smooth(linetype = 2) +
+  labs( title = "Soil EC", x = "TimeStamp", y = "EC") + 
+  theme_minimal()
+
+#convert to date type and extract the month for wvc
+f_soil_EC_15<- f_soil_EC_15 |> 
+  mutate(
+    month_column = as.Date(TIMESTAMP))
+f_soil_EC_15 <- f_soil_EC_15 |> 
+  mutate(
+    month = month(month_column, label = TRUE))
+
+#graph of each month for vwc
+ggplot(
+  f_soil_EC_15, aes(x = month, y = Value)) + 
+  geom_boxplot() + 
+  facet_wrap(~ month, scales = "free_x", ncol = 6) + 
+  labs(title = "EC by Month", y = "EC", x = "Month") + 
+  theme_minimal()
+
+#Boxplot with points (choose between the ones w/ or w/out)
+f_soil_EC_15 |> 
+  slice_sample(n = 1000) |> 
+  ggplot(
+    aes(x = month, y = Value)) + 
+  geom_boxplot() + geom_jitter(pch = 19, width = 0.2, aes(color = month)) + 
+  facet_wrap(~ month, scales = "free_x", ncol = 6) + 
+  labs(title = "EC by Month", y = "EC", x = "Month") + 
+  theme_minimal()
+
+#graph with colors 
+f_soil_EC_15 |> 
+  slice_sample(n = 1000) |> 
+  ggplot(aes(x = month, y = Value, color = Value)) + 
+  geom_point(na.rm = TRUE) +
+  labs(title = "By Month", x = "Month", y = "VWC") + 
+  theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust= 1))
+
 
 # Merge the data
 # TEROS sensors are clustered -- a single sensor simultaneously
@@ -198,6 +254,8 @@ teros_combined |>
             relationship = "one-to-one") |> 
   rename(Value_ec15 = Value) ->
   teros_combined
+
+
 
 # ------------------------------------------------------
 # ------ ANALYZE RELATIONSHIPS BETWEEN VARIABLES
@@ -253,9 +311,6 @@ teros_combined |>
                       sec.axis = sec_axis(~ . / scale_factor, name = "VWC")) +
    labs(title = "Soil Temperature and Water Content Over Time", x = "Timestamp") +
    theme_minimal()
-  
- 
- 
  
 ggplot(
     teros_combined, aes(x = month, y = Value_vwc15, group = month, fill = as.factor(month))) + 
@@ -276,34 +331,6 @@ ggplot(
 #########################################
 # BEN AND GABBY GOT TO HERE -- 
 #########################################
-
-
-
-#Visualizing N/As
-vis_miss(s_soil_vwc_5)
-s_soil_vwc_5 |> drop_na(Value)
-
-gg_miss_var(C_soil_EC_15)
-
-#Graphing Value without N/A for visualization 
-clean_data_soil_vwc5 <- s_soil_vwc_5 |> drop_na(Value)
-ggplot(clean_data_soil_vwc5, aes(x = TIMESTAMP, y = Value)) + geom_point()
-
-#trying to graph with the N/A for visualization 
-s_soil_vwc_5 |> 
-  mutate(Value = fct_na_value_to_level(factor(Value), level = "Missing Data")) |> 
-  ggplot(aes(x = Value)) + 
-  geom_bar(fill = "steelblue")
-
-s_soil_vwc5 |> 
-  mutate(Value = fct_na_value_to_level(factor(Value), level = "Missing Data")) |> 
-  ggplot(aes(x = Value)) + geom_bar(fill = "steelblue")
-
-df_clean |> ggplot(aes(x = TIMESTAMP, y = Value)) + geom_point(color = "brown")
-
-
-
-
 
 #removing columns  
 #f_15_soilcombined <- f_15_soilcombined |> select (-month_column, - month)
