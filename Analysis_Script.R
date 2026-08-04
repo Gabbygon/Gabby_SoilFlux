@@ -74,7 +74,7 @@ soil_temp15 <- soil_temp15 |>
 ggplot(
   soil_temp15, aes(x = month, y = Value, group = month, fill = as.factor(month))) + 
   geom_boxplot() + 
-  labs(title = "By Month", x = "Month", y = "Temperature") + 
+  labs(title = "Temperature by Month", x = "Month", y = "Temperature") + 
   theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust= 1), 
   legend.position = "none")
 
@@ -87,7 +87,7 @@ soil_temp15 |>
   labs(title = "By Month", x = "Month", y = "Temperature") + 
   theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust= 1))
 
-#separate  
+#Temperature by month   
 ggplot(
   soil_temp15, aes(x = month, y = Value)) + 
   geom_boxplot() + 
@@ -127,18 +127,10 @@ summary(soil_vwc)
 # Randomly sub_sample the data to make plotting faster
 soil_vwc |>
   slice_sample(n = 10000) |>
-  ggplot(aes(x = TIMESTAMP, y = Value)) +
-  geom_point(color = "brown") + 
+  ggplot(aes(x = TIMESTAMP, y = Value, color = Plot)) +
+  geom_point() + 
   labs( title = "Soil VWC", x = "TimeStamp", y = "Volumetric water content") + 
   theme_minimal()
-
-#Time and value 
-soil_vwc |> 
-  group_by(TIMESTAMP) |>                             
-  summarize(mean_vwc = mean(Value, na.rm = TRUE)) |>       
-  ggplot(aes(x = TIMESTAMP, y = mean_vwc, group = TIMESTAMP)) +  
-  geom_line() + 
-  geom_point()
 
 #convert to date type and extract the month for wvc
 soil_vwc<- soil_vwc |> 
@@ -153,7 +145,17 @@ ggplot(
   soil_vwc, aes(x = month, y = Value)) + 
   geom_boxplot() + 
   facet_wrap(~ month, scales = "free_x", ncol = 6) + 
-  labs(title = "VWC by Month", y = "Temperature") + 
+  labs(title = "Moisture by Month", y = "Temperature", x = "Month") + 
+  theme_minimal()
+
+#Boxplot with points (choose between the ones w/ or w/out)
+soil_vwc |> 
+  slice_sample(n = 1000) |> 
+ggplot(
+ aes(x = month, y = Value)) + 
+  geom_boxplot() + geom_jitter(pch = 19, width = 0.2, aes(color = month)) + 
+  facet_wrap(~ month, scales = "free_x", ncol = 6) + 
+  labs(title = "Moisture by Month", y = "Temperature", x = "Month") + 
   theme_minimal()
 
 #bar graph of all data vwc 
@@ -490,4 +492,18 @@ soil_temp15 |>
   ggplot(aes(x = Month, y = mean_temp)) +  
   geom_col()
 
-ggplot(subset )
+
+#double check for this code
+soil_temp15 |> 
+  slice_sample(n = 100) |> 
+  ggplot(soil_temp15, aes(x = TIMESTAMP, fill = Plot)) + 
+  geom_bar() + xlab('Timeline') + ylab('Value') + ggtitle('Value over time') 
+
+#Temperature by plot 
+ggplot(
+  soil_temp15, 
+  aes(x = Plot, y = Value)) + 
+  geom_boxplot() + 
+  xlab('Plot') + 
+  ylab('Temperature') + 
+  ggtitle('Temperature by plot')
