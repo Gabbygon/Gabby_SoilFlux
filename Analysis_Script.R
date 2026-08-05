@@ -54,14 +54,6 @@ soil_temp15 |>
   geom_line() + 
   geom_point()
 
-#bar graph of all soil temp data 
-soil_temp15 |> 
-  mutate(Month = month(TIMESTAMP)) |> 
-  group_by(Month) |> 
-  summarize(mean_temp = mean(Value, na.rm = TRUE)) |> 
-  ggplot(aes(x = Month, y = mean_temp)) +  
-  geom_col()
-
 #convert to date type and extract the month
 soil_temp15<- soil_temp15 |> 
   mutate(
@@ -247,7 +239,7 @@ soil_temp15 |>
   select (-month_column.x, -month_column.y, -month.x, -month.y) ->
   teros_combined
 
-
+#Adding the soil EC 
 teros_combined |> 
   left_join(f_soil_EC_15, 
             by = c("Plot", "TIMESTAMP", "Instrument_ID", "Sensor_ID", "Location"), 
@@ -265,6 +257,7 @@ teros_combined |>
 flood_start <- ymd_hms("2024-06-11 00:00:00")  
 flood_end   <- ymd_hms("2024-06-13 23:45:00")  
 
+#Temperature and VWC
 teros_combined |> 
   slice_sample(n = 1000) |> 
   ggplot(aes(x = TIMESTAMP)) +
@@ -272,14 +265,24 @@ teros_combined |>
   geom_line(aes(y = Value_vwc15 * 70, color = "VWC")) +  # rescaled 
   annotate("rect", xmin = flood_start, xmax = flood_end, ymin = -Inf, ymax = Inf, alpha = 0.1, fill = "green") +
   facet_wrap(~ Location) +
-  labs(y = "Temperature/VWC", color = "Variable") +
+  labs(y = "Temperature & VWC", color = "Variable") +
   theme(axis.text.x = element_text(angle = 90))
 
+#Temperature and EC
+teros_combined |> 
+  slice_sample(n = 1000) |> 
+  ggplot(aes(x = TIMESTAMP)) +
+  geom_line(aes(y = Value_temp15, color = "Temperature")) +
+  geom_line(aes(y = Value_ec15 *80, color = "EC")) +  # rescaled 
+  annotate("rect", xmin = flood_start, xmax = flood_end, ymin = -Inf, ymax = Inf, alpha = 0.1, fill = "green") +
+  facet_wrap(~ Location) +
+  labs(y = "Temperature & EC", color = "Variable") +
+  theme(axis.text.x = element_text(angle = 90))
 
 teros_combined <- teros_combined |> 
   mutate(
     loc_row = substr(Location, 1, 1),       # A-J 
-    loc_col = as.numeric(substr(Location, 2, 2))  # number
+    loc_col = as.numeric(substr(Location, 2, 2))
   )
 
 # Tile (heat map) plots of soil temperature
@@ -296,8 +299,9 @@ teros_combined |>
   geom_tile() +
   facet_grid(Quarter ~ Plot) +
   labs(x = "Columns", y = "Location", fill = "Temp")
+
  
-#trying to do graphs
+#Graphs
  scale_factor <- 42.15
  
  teros_combined |> 
@@ -312,13 +316,28 @@ teros_combined |>
    labs(title = "Soil Temperature and Water Content Over Time", x = "Timestamp") +
    theme_minimal()
  
+ 
+ scale_factor <- 42.15
+ 
+ teros_combined |> 
+   slice_sample(n = 1000) |> 
+   ggplot(aes(x = TIMESTAMP)) +
+   geom_point(aes(y = Value_vwc15), color = "red", alpha = 0.05, size = 1) +
+   geom_point(aes(y = Value_ec15 * scale_factor), color = "blue", alpha = 0.05, size = 1) +
+   geom_smooth(aes(y = Value_vwc15), method = "lm", se = FALSE, color = "red") +
+   geom_smooth(aes(y = Value_ec15 * scale_factor), method = "lm", se = FALSE, color = "blue") +
+   scale_y_continuous(name = "Temperature (°C)",
+                      sec.axis = sec_axis(~ . / scale_factor, name = "VWC")) +
+   labs(title = "Soil Temperature and Water Content Over Time", x = "Timestamp") +
+   theme_minimal()
+ 
+ 
 ggplot(
     teros_combined, aes(x = month, y = Value_vwc15, group = month, fill = as.factor(month))) + 
     geom_boxplot() + 
     labs(litle = "By Month", x = "Month", y = "Soil Volumetric Water content") + 
     theme_minimal() + theme(asix.text.x = element_text(angle = 45, hjust= 1), 
                             legend.position = "none")
-
 
 ggplot(
   teros_combined, aes(x = Value_vwc15, y = Value_temp15, fill = as.factor(month))) + 
@@ -332,15 +351,10 @@ ggplot(
 # BEN AND GABBY GOT TO HERE -- 
 #########################################
 
-#removing columns  
-#f_15_soilcombined <- f_15_soilcombined |> select (-month_column, - month)
-
-#plotting relationships 
-flood_start <- ymd_hms("2026-6-8 00:00:00")  
-flood_end   <- ymd_hms("2026-6-11 23:45:00")  
-
 #Temperature and vwc
-ggplot(f_15_soilcombined, aes(x = TIMESTAMP)) +
+teros_combined |> 
+  slice_sample(n = 1000) |> 
+ggplot(aes(x = TIMESTAMP)) +
   geom_line(aes(y = Value_temp15, color = "Temperature")) +
   geom_line(aes(y = Value_vwc15 * 50, color = "VWC")) + theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
   annotate("rect", xmin = flood_start, xmax = flood_end, ymin = -Inf, ymax = Inf, alpha = 0.1, fill = "green") +
@@ -348,52 +362,40 @@ ggplot(f_15_soilcombined, aes(x = TIMESTAMP)) +
   labs(y = "Temperature/VWC", color = "Variable")
 
 #Temperature and EC
-ggplot(f_15_soilcombined, aes(x = TIMESTAMP)) +
+teros_combined |> 
+  slice_sample(n = 1000) |> 
+ggplot( aes(x = TIMESTAMP)) +
   geom_line(aes(y = Value_temp15, color = "Temperature")) +
   geom_line(aes(y = Value_ec15 / 10, color = "EC")) + theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
   annotate("rect", xmin = flood_start, xmax = flood_end, ymin = -Inf, ymax = Inf, alpha = 0.1, fill = "green") +
   facet_wrap(~ Location)  + 
   labs(y = "Temperature/EC", color = "Variable") 
 
-
-#2026 freshwater soil plot data temp, vwc, and Ec (30cm)
-f_soil_temp_30 <- read_parquet("L2_data/TMP_F_2026_soil-temp-30cm_L2_v___.parquet") 
-f_soil_vwc_30 <- read_parquet("L2_data/TMP_F_2026_soil-vwc-30cm_L2_v___.parquet")  
-f_soil_EC_30 <- read_parquet ("L2_data/TMP_F_2026_soil-EC-30cm_L2_v___.parquet")
-
-#Mergning all of the data 
-f_soil_temp_30 |> 
-  rename(Value_temp30 = Value) |> 
-  left_join(f_soil_vwc_30, 
-            by = c("Plot", "TIMESTAMP", "Instrument_ID", "Sensor_ID", "Location"), 
-            relationship = ("one-to-one") |> 
-            rename(f_soil_vwc_30, Value_vwc30 = Value)) -> f_30_combined
-
-f_soil_temp_30 |> 
-  rename(Value_temp30 = Value) |> 
-  left_join(f_soil_vwc_30 |> rename(Value_vwc30 = Value), 
-            by = c("Plot", "TIMESTAMP", "Instrument_ID", "Sensor_ID", "Location"), 
-            relationship = "one-to-one") -> f_30_combined
+#Tiles
+teros_combined |> group_by(Location) |> summarise(mean_temp5 = mean(Value, na.rm = TRUE)) |> 
+  separate(Location, into = c("grid_letter", "grid_number"), sep = 1) |> 
+  ggplot(aes(x = grid_letter, y = grid_number, fill = mean_temp5)) + 
+  geom_tile() +
+  scale_fill_viridis_c(option = "H", begin = 0.2) +
+  theme_bw() +
+  labs(title = "Saltwater Plot Soil Temperature - 15cm", fill = "temperature C")
 
 
-#only way it wants to join together
-#not working 
-f_soil_vwc_30 |> 
-  rename(Value_vwc30 = Value) -> f_soil_vwc_30
+#calculating the coefficient of variability
+sd(soil_temp15$Value, na.rm = TRUE) / mean(soil_temp15$Value, na.rm = TRUE) -> Cv
 
-f_soil_temp_30 |> 
-  rename(Value_temp30 = Value) |> 
-  left_join(f_soil_vwc_30, 
-            by = c("Plot", "TIMESTAMP", "Instrument_ID", "Sensor_ID", "Location"), 
-            relationship = "one-to-one") -> f_30_combined
+#Saltwater special plot 15cm-5
+teros_combined |> group_by(Location) |> summarise(mean_temp5 = mean(Value, na.rm = TRUE)) |> 
+  separate(Location, into = c("grid_letter", "grid_number"), sep = 1) |> 
+  ggplot(aes(x = grid_letter, y = grid_number, color = mean_temp5)) + 
+  geom_point(size = 3) +
+  scale_color_viridis_c(option = "H", begin = 0.2) +
+  theme_bw() +
+  labs(title = "Saltwater Plot Soil Temperature - 15cm", color = "temperature C")
 
 
-f_30_combined |> 
-  left_join(f_soil_EC_30, 
-            by = c("Plot", "TIMESTAMP", "Instrument_ID", "Sensor_ID", "Location"), 
-            relationship = "one-to-one") |> 
-  rename(Value_ec15 = Value) ->
-  f_30_soilcombined
+
+
 
 #Other way 
 #KAM addition 28.07.2026
@@ -408,18 +410,13 @@ f_soil_EC_30 %>%
 f_soil_vwc_30 |> 
   rename(Value_vwc30 = Value)
   filter(! is.na(Value_vwc30)) -> f_soil3_30
-  #Value for the fresh water soil plot of 30 cm is all N/A
-  #Will try to work with the saltwater soil plot 
   
-#working with the saltwater plot (5cm)
-  s_soil_temp_5 <- read_parquet("L2_data/TMP_S_2026_soil-temp-5cm_L2_v___.parquet")
-  s_soil_vwc_5 <- read_parquet("L2_data/TMP_S_2026_soil-vwc-5cm_L2_v___.parquet")
-  s_soil_EC_5 <- read_parquet("L2_data/TMP_S_2026_soil-EC-5cm_L2_v___.parquet")  
   
 #merging 
 s_soil_temp_5 |> 
   rename(Value_temp5 = Value) |> 
-  filter(! is.na(Value_temp5)) -> s_soil1 
+  filter(! 
+           is.na(Value_temp5)) -> s_soil1 
 
 s_soil_EC_5 |> 
   rename(Value_EC5 = Value) |> 
@@ -439,75 +436,7 @@ bind_rows(s_soil_temp_5, s_soil_EC_5, s_soil_vwc_5) |>
   filter(!is.na(Value)) |>
   pivot_wider(names_from = research_name, values_from = Value) -> s_5_combined_long
   
-#plotting  
-flood_start <- ymd_hms("2026-6-8 00:00:00")  
-flood_end   <- ymd_hms("2026-6-11 23:45:00")  
 
-ggplot(s_5_soilcombined, aes(x = TIMESTAMP)) +
-  geom_line(aes(y = Value_temp5, color = "Temperature")) +
-  geom_line(aes(y = Value_vwc5 * 50, color = "VWC")) +  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
-  annotate("rect", xmin = flood_start, xmax = flood_end, ymin = -Inf, ymax = Inf, alpha = 0.1, fill = "green") +
-  facet_wrap(~ Location) +
-  labs(y = "Temperature/VWC", color = "Variable")
-
-ggplot(s_5_soilcombined, aes(x = TIMESTAMP)) +
-  geom_line(aes(y = Value_temp5, color = "Temperature")) +
-  geom_line(aes(y = Value_EC5 / 30, color = "EC")) +  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
-  annotate("rect", xmin = flood_start, xmax = flood_end, ymin = -Inf, ymax = Inf, alpha = 0.1, fill = "green") +
-  facet_wrap(~ Location) +
-  labs(y = "Temperature/EC", color = "Variable")
-
-#Saltwater special plot 15cm-5
-s_soil_temp_15 |> group_by(Location) |> summarise(mean_temp5 = mean(Value, na.rm = TRUE)) |> 
-  separate(Location, into = c("grid_letter", "grid_number"), sep = 1) |> 
-  ggplot(aes(x = grid_letter, y = grid_number, color = mean_temp5)) + 
-  geom_point(size = 3) +
-  scale_color_viridis_c(option = "H", begin = 0.2) +
-  theme_bw() +
-  labs(title = "Saltwater Plot Soil Temperature - 15cm", color = "temperature C")
-
-#calculating the coefficient of variability
-sd(s_soil_temp_15$Value, na.rm = TRUE) / mean(s_soil_temp_15$Value, na.rm = TRUE) -> Cv
-
-#Tiles
-s_soil_temp_15 |> group_by(Location) |> summarise(mean_temp5 = mean(Value, na.rm = TRUE)) |> 
-  separate(Location, into = c("grid_letter", "grid_number"), sep = 1) |> 
-  ggplot(aes(x = grid_letter, y = grid_number, fill = mean_temp5)) + 
-  geom_tile() +
-  scale_fill_viridis_c(option = "H", begin = 0.2) +
-  theme_bw() +
-  labs(title = "Saltwater Plot Soil Temperature - 15cm", fill = "temperature C")
-
-#
-s_soil_temp_15 <- read_parquet("L2_data/TMP_S_2026_soil-temp-15cm_L2_v___.parquet")
-s_soil_EC_15 <- read_parquet("L2_data/TMP_S_2026_soil-EC-15cm_L2_v___.parquet")   
-s_soil_vwc_15 <- read_parquet("L2_data/TMP_S_2026_soil-vwc-15cm_L2_v___.parquet")
-
-#
-s_soil_temp_15 |> 
-  rename(Value_temp15 = Value) |> 
-  filter(! is.na(Value_temp15)) -> s_soilt1 
-
-s_soil_EC_15 |> 
-  rename(Value_EC15 = Value) |> 
-  filter(! is.na(Value_EC15)) -> s_soilt2
-
-s_soil_vwc_15 |> 
-  rename(Value_vwc15 = Value) |> 
-  filter(! is.na(Value_vwc15)) -> s_soilt3
-
-#
-bind_rows(s_soil_temp_15, s_soil_EC_15, s_soil_vwc_15) |>
-  filter(!is.na(Value)) |>
-  pivot_wider(names_from = research_name, values_from = Value) -> s_15_combined_long
-
-#plotting  
-ggplot(s_15_combined_long, aes(x = TIMESTAMP)) +
-  geom_line(aes(y = Value_temp15, color = "Temperature")) +
-  geom_line(aes(y = Value_vwc15 * 50, color = "VWC")) +  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
-  annotate("rect", xmin = flood_start, xmax = flood_end, ymin = -Inf, ymax = Inf, alpha = 0.1, fill = "green") +
-  facet_wrap(~ Location) +
-  labs(y = "Temperature/VWC", color = "Variable")
 
 
 #_______
