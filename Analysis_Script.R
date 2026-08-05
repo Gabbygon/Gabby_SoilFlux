@@ -1,6 +1,7 @@
 # Summer TEMPEST soil analysis
 # Gabby Gonzalez 2026
 
+#load in all the packages that will be needed 
 library(arrow)
 library(dplyr)
 library(tidyr)
@@ -12,10 +13,10 @@ library(patchwork)
 library(naniar)
 library(compasstools)
 
-# ------------------------------------------------------
+# --------------------------------------------------------
 # ------ READ IN SOIL TEMP, VWC, AND EC AND PLOT/SUMMARIZE
-# -----------------------------------------------------
-# --------Plot----------------------------------------------
+# --------------------------------------------------------
+# --------Plot--------------------------------------------
 
 # We use the "compasstools" package (loaded above) to load data
 # Specifically, compasstools::read_L2_variable()
@@ -43,19 +44,20 @@ soil_temp15 |>
   # add a 'smoother' -- a smooth line that follows the data to help
   # audience see trend
   geom_smooth(linetype = 2) +
-  labs( title = "Soil Temperature", x = "TimeStamp", y = "Temperature")
+  labs( title = "Soil Temperature Over Time", x = "TimeStamp", y = "Temperature")
 
-#Group by month and sensor
-#Take the mean of the value column
+# Goup by month and sensor ID
+# Take the mean of the value column
 soil_temp15 |> 
   mutate(Month = month(TIMESTAMP)) |> 
   group_by(Month, Sensor_ID, Plot) |>                             
   summarize(mean_temp = mean(Value, na.rm = TRUE)) |>       
   ggplot(aes(x = Month, y = mean_temp, group = Sensor_ID, color = Plot)) +  
   geom_line() + 
-  geom_point()
+  geom_point() + labs( title = "Soil Temperature by Sensor ", x = "Month", y = "Average Temp")
 
-#Convert to date type and extract the month
+
+# Convert to date type and extract the month
 soil_temp15<- soil_temp15 |> 
   mutate(
     month_column = as.Date(TIMESTAMP))
@@ -63,7 +65,7 @@ soil_temp15 <- soil_temp15 |>
   mutate(
     month = month(month_column, label = TRUE))
 
-#Box plot graph of temp and month (overall data)
+# Box plot of temp and month (overall data)
 ggplot(
   soil_temp15, aes(x = month, y = Value, group = month, fill = as.factor(month))) + 
   geom_boxplot() + 
@@ -71,7 +73,8 @@ ggplot(
   theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust= 1), 
   legend.position = "none")
 
-#Graph of temp and month with colors
+# Graph of temp and month 
+# Same data as above but different graph 
 soil_temp15 |> 
   slice_sample(n = 1000) |> 
   ggplot(aes(x = month, y = Value, color = Value)) + 
@@ -80,7 +83,7 @@ soil_temp15 |>
   labs(title = "By Month", x = "Month", y = "Temperature") + 
   theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust= 1))
 
-#Temperature by month of each plot 
+# Temperature by month of each plot 
 ggplot(
   soil_temp15, aes(x = month, y = Value, group = Plot, color = Plot)) + 
   geom_boxplot() + 
@@ -88,7 +91,7 @@ ggplot(
   labs(title = "Temperature by Month", y = "Temperature") + 
   theme_minimal()
 
-#per-month variability 
+# Per-month variability 
 soil_temp15 |> 
   group_by(Plot, month) |>
   # compute mean and s.d. for each month
@@ -97,14 +100,16 @@ soil_temp15 |>
   ggplot(aes(x = month, y = mean_value, color = Plot)) +
   geom_point() + 
   geom_line(linetype = 2, aes(group = Plot)) +
-  geom_errorbar(aes(ymin = mean_value - sd_value, ymax = mean_value + sd_value))
+  geom_errorbar(aes(ymin = mean_value - sd_value, ymax = mean_value + sd_value)) +
+  labs(title = "Per-month Variability", y = "Average Value", x = "Month") + 
+  theme(axis.text.x = element_text(angle = 45, hjust= 1))
 
-# Soil volumetric Water Content 
+# Soil volumetric Water Content 15 cm 
 # Read in data from soil vwc parquet file
 soil_vwc <- read_L2_variable("soil-vwc-15cm", path = "L2_data/") |> 
   select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
 
-#Summarizing swc file 
+# Summarizing swc file 
 head(soil_vwc)
 names(soil_vwc)
 dim(soil_vwc)
@@ -122,10 +127,21 @@ soil_vwc |>
   # add a 'smoother' -- a smooth line that follows the data to help
   # audience see trend
   geom_smooth(linetype = 2) +
-  labs( title = "Soil VWC", x = "TimeStamp", y = "Volumetric Water content") + 
+  labs( title = "Soil VWC Over Time", x = "Month", y = "Volumetric Water content") + 
   theme_minimal()
 
-#convert to date type and extract the month for wvc
+# Group by month and sensor
+# Take the mean of the value column
+soil_vwc |> 
+  mutate(Month = month(TIMESTAMP)) |> 
+  group_by(Month, Sensor_ID, Plot) |>                             
+  summarize(mean_vwc = mean(Value, na.rm = TRUE)) |>       
+  ggplot(aes(x = Month, y = mean_vwc, group = Sensor_ID, color = Plot)) +  
+  geom_line() + 
+  geom_point() +
+  labs(title = "Soil VWC over time", y = "Average soil VWC")
+
+# Convert to date type and extract the month for wvc
 soil_vwc<- soil_vwc |> 
   mutate(
     month_column = as.Date(TIMESTAMP))
@@ -133,7 +149,7 @@ soil_vwc <- soil_vwc |>
   mutate(
     month = month(month_column, label = TRUE))
 
-#graph of each month for vwc
+# Graph of each month for vwc
 ggplot(
   soil_vwc, aes(x = month, y = Value, group = Plot, color = Plot)) + 
   geom_boxplot() + 
@@ -141,7 +157,7 @@ ggplot(
   labs(title = "Moisture by Month", y = "Temperature", x = "Month") + 
   theme_minimal()
 
-#Boxplot with points (choose between the ones w/ or w/out)
+# Boxplot with points (choose between the ones w/ or w/out)
 soil_vwc |> 
   slice_sample(n = 1000) |> 
 ggplot(
@@ -149,15 +165,15 @@ ggplot(
   geom_boxplot() + geom_jitter(pch = 19, width = 0.2, aes(color = month)) + 
   facet_wrap(~ month, scales = "free_x", ncol = 6) + 
   labs(title = "Moisture by Month", y = "Temperature", x = "Month") + 
-  theme_minimal()
+  theme_minimal() + theme(legend.position = "none")
 
-#VWC by month graph with colors
+# VWC by month graph with colors
 soil_vwc |> 
   slice_sample(n = 1000) |> 
   ggplot(aes(x = month, y = Value, color = Value)) + 
   geom_point(na.rm = TRUE) +
   scale_color_gradient2(low = "brown", high = "blue",mid ="brown", midpoint = 5, limits = c(0, 30)) +
-  labs(title = "By Month", x = "Month", y = "VWC") + 
+  labs(title = "By Month", x = "Month", y = "Volumetric Water Content") + 
   theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust= 1))
 
 # SOIL EC 
@@ -183,7 +199,7 @@ f_soil_EC_15 |>
   # add a 'smoother' -- a smooth line that follows the data to help
   # audience see trend
   geom_smooth(linetype = 2) +
-  labs( title = "Soil EC", x = "TimeStamp", y = "EC") + 
+  labs( title = "Soil EC Over Time", x = "TimeStamp", y = "EC") + 
   theme_minimal()
 
 #convert to date type and extract the month for EC
@@ -194,15 +210,15 @@ f_soil_EC_15 <- f_soil_EC_15 |>
   mutate(
     month = month(month_column, label = TRUE))
 
-#graph of each month for EC
+# graph of each month for EC
 ggplot(
-  f_soil_EC_15, aes(x = month, y = Value)) + 
+  f_soil_EC_15, aes(x = month, y = Value, group = Plot, color = Plot)) + 
   geom_boxplot() + 
   facet_wrap(~ month, scales = "free_x", ncol = 6) + 
   labs(title = "EC by Month", y = "EC", x = "Month") + 
   theme_minimal()
 
-#Boxplot with points (choose between the ones w/ or w/out)
+# Boxplot with points (choose between the ones w/ or w/out)
 f_soil_EC_15 |> 
   slice_sample(n = 1000) |> 
   ggplot(
@@ -212,7 +228,7 @@ f_soil_EC_15 |>
   labs(title = "EC by Month", y = "EC", x = "Month") + 
   theme_minimal()
 
-#graph with colors 
+# graph with colors 
 f_soil_EC_15 |> 
   slice_sample(n = 1000) |> 
   ggplot(aes(x = month, y = Value, color = Value)) + 
