@@ -63,7 +63,7 @@ soil_temp15 <- soil_temp15 |>
   mutate(
     month = month(month_column, label = TRUE))
 
-#Box plot graph of temp and month 
+#Box plot graph of temp and month (overall data)
 ggplot(
   soil_temp15, aes(x = month, y = Value, group = month, fill = as.factor(month))) + 
   geom_boxplot() + 
@@ -80,11 +80,9 @@ soil_temp15 |>
   labs(title = "By Month", x = "Month", y = "Temperature") + 
   theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust= 1))
 
-
-#!!DO by plot 
-#Temperature by month   
+#Temperature by month of each plot 
 ggplot(
-  soil_temp15, aes(x = month, y = Value)) + 
+  soil_temp15, aes(x = month, y = Value, group = Plot, color = Plot)) + 
   geom_boxplot() + 
   facet_wrap(~ month, scales = "free_x", ncol = 6) + 
   labs(title = "Temperature by Month", y = "Temperature") + 
@@ -135,10 +133,9 @@ soil_vwc <- soil_vwc |>
   mutate(
     month = month(month_column, label = TRUE))
 
-#!!add plot 
 #graph of each month for vwc
 ggplot(
-  soil_vwc, aes(x = month, y = Value)) + 
+  soil_vwc, aes(x = month, y = Value, group = Plot, color = Plot)) + 
   geom_boxplot() + 
   facet_wrap(~ month, scales = "free_x", ncol = 6) + 
   labs(title = "Moisture by Month", y = "Temperature", x = "Month") + 
@@ -381,10 +378,10 @@ teros_combined |> group_by(Location, Plot) |>
   teros_temp15_loc_avg
 
 teros_temp15_loc_avg |>
-  filter(Plot == "S") |>
+  #filter(Plot == "S") |>
   ggplot(aes(x = grid_letter, y = grid_number, fill = mean_temp15)) + 
   geom_tile() +
-  scale_fill_viridis_c(option = "H", begin = 0.2) +
+  scale_fill_viridis_c(option = "B") +
   theme_bw() +
   labs(title = "Freshwater Plot Soil Temperature - 15cm", fill = "temperature C") +
   facet_wrap(~Plot)
