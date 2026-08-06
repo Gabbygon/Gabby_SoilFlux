@@ -21,9 +21,11 @@ library(compasstools)
 # We use the "compasstools" package (loaded above) to load data
 # Specifically, compasstools::read_L2_variable()
 soil_temp15 <- read_L2_variable("soil-temp-15cm", path = "L2_data/")
-# 5 and 30 cm depths 
 soil_temp5 <- read_L2_variable("soil-temp-5cm",  path = "L2_data/")
 soil_temp30 <- read_L2_variable("soil-temp-30cm",  path = "L2_data/")
+
+# Using bind_rows() to bring them together 
+Soil_temp <- bind_rows(soil_temp15, soil_temp5, soil_temp30)
 
 #Summarizing soil temp file 
 head(soil_temp15)
@@ -109,11 +111,12 @@ soil_temp15 |>
 
 # Soil volumetric Water Content 15 cm 
 # Read in data from soil vwc parquet file
-soil_vwc15 <- read_L2_variable("soil-vwc-15cm", path = "L2_data/") |> 
-  select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
-# 5 and 30 cm depths 
+soil_vwc15 <- read_L2_variable("soil-vwc-15cm", path = "L2_data/") 
 soil_vwc5 <- read_L2_variable("soil-vwc-5cm", path = "L2_data/")
 soil_vwc30 <- read_L2_variable("soil-vwc-30cm", path = "L2_data/")
+
+#Using bind_rows() to bring them together 
+Soil_vwc <- bind_rows(soil_vwc15, soil_vwc5, soil_vwc30)
 
 # Summarizing swc file 
 head(soil_vwc)
@@ -184,11 +187,18 @@ soil_vwc |>
 
 # SOIL EC 
 # Read in data from soil EC parquet file
-Soil_EC_15 <- read_L2_variable("soil-EC-15cm", path = "L2_data/") |> 
-  select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
-# 5 and 30 cm depths 
+soil_EC_15 <- read_L2_variable("soil-EC-15cm", path = "L2_data/") 
 soil_EC5 <- read_L2_variable("soil-EC-5cm", path = "L2_data/")
 soil_EC30 <- read_L2_variable("soil-EC-30cm", path = "L2_data/")
+
+# Use bind_rows() to bring them together 
+Soil_EC <- bind_rows(soil_EC_15, soil_EC5, soil_EC30)
+
+#Spliting the column's contents into multiple columns
+Soil_temp |> separate(research_name, into = c("first_part", "second_part", "depth")) -> Split_soil_temp
+Soil_vwc |>  separate(research_name, into = c("first_part", "second_part", "depth")) -> Split_Soil_vwc
+Soil_EC |> separate(research_name, into = c("first_part", "second_part", "depth")) -> Split_Soil_EC
+
 
 #Summarizing EC file 
 head(Soil_EC_15)
@@ -420,3 +430,43 @@ teros_combined |> group_by(Location) |> summarise(mean_temp5 = mean(Value, na.rm
   scale_color_viridis_c(option = "H", begin = 0.2) +
   theme_bw() +
   labs(title = "Freshwatwr Plot Soil Temperature - 15cm", color = "temperature C")
+
+#trying with the new split data set
+Split_soil_temp |> 
+  slice_sample(n = 1000) |> 
+  ggplot(aes(x = TIMESTAMP, y = Value, group = depth, color = depth)) + 
+  geom_point() + geom_smooth(linetype = 2) 
+
+Split_Soil_vwc |> 
+  slice_sample(n = 1000) |> 
+  ggplot(aes(x= Value, y = Plot, group = depth, color = depth)) +
+  geom_point() + geom_smooth(linetype = 2)
+
+Split_Soil_EC |> 
+  slice_sample(n = 1000) |> 
+  ggplot(aes(x= TIMESTAMP, y = Value, group = depth, color = depth)) +
+  geom_point() + geom_smooth(linetype = 2)
+
+Split_Soil_EC |> 
+  slice_sample(n = 1000) |> 
+  ggplot(aes(x= Value, y = Plot, group = depth, color = depth)) +
+  geom_point() + geom_smooth(linetype = 2)
+
+# Convert to date type and extract the month
+Split_soil_temp<- Split_soil_temp |> 
+  mutate(
+    month_column = as.Date(TIMESTAMP))
+Split_soil_temp <- Split_soil_temp |> 
+  mutate(
+    month = month(month_column, label = TRUE))
+
+# Goup by month and sensor ID
+# Take the mean of the value column
+Soil_temp |> 
+  mutate(Month = month(TIMESTAMP)) |> 
+  group_by(Month, Sensor_ID, Plot) |>                             
+  summarize(mean_temp = mean(Value, na.rm = TRUE)) |>       
+  ggplot(aes(x = Month, y = mean_temp, group = Sensor_ID, color = Plot)) +  
+  geom_line() + 
+  geom_point() + labs( title = "Soil Temperature by Sensor ", x = "Month", y = "Average Temp")
+
