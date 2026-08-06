@@ -412,12 +412,3 @@ teros_combined |> group_by(Location) |> summarise(mean_temp5 = mean(Value, na.rm
   theme_bw() +
   labs(title = "Freshwatwr Plot Soil Temperature - 15cm", color = "temperature C")
 
-#Load all of the data including the 5, 10, 30 cm 
-soil_temp5 <- read_L2_variable("soil-temp-5cm",  path = "L2_data/")
-soil_temp30 <- read_L2_variable("soil-temp-30cm",  path = "L2_data/")
-
-soil_vwc5 <- read_L2_variable("soil-vwc-5cm", path = "L2_data/")
-soil_vwc30 <- read_L2_variable("soil-vwc-30cm", path = "L2_data/")
-
-soil_EC5 <- read_L2_variable("soil-EC-5cm", path = "L2_data/")
-soil_EC30 <- read_L2_variable("soil-EC-30cm", path = "L2_data/")
