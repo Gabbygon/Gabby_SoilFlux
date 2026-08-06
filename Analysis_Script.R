@@ -21,6 +21,9 @@ library(compasstools)
 # We use the "compasstools" package (loaded above) to load data
 # Specifically, compasstools::read_L2_variable()
 soil_temp15 <- read_L2_variable("soil-temp-15cm", path = "L2_data/")
+# 5 and 30 cm depths 
+soil_temp5 <- read_L2_variable("soil-temp-5cm",  path = "L2_data/")
+soil_temp30 <- read_L2_variable("soil-temp-30cm",  path = "L2_data/")
 
 #Summarizing soil temp file 
 head(soil_temp15)
@@ -108,6 +111,9 @@ soil_temp15 |>
 # Read in data from soil vwc parquet file
 soil_vwc15 <- read_L2_variable("soil-vwc-15cm", path = "L2_data/") |> 
   select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
+# 5 and 30 cm depths 
+soil_vwc5 <- read_L2_variable("soil-vwc-5cm", path = "L2_data/")
+soil_vwc30 <- read_L2_variable("soil-vwc-30cm", path = "L2_data/")
 
 # Summarizing swc file 
 head(soil_vwc)
@@ -178,20 +184,23 @@ soil_vwc |>
 
 # SOIL EC 
 # Read in data from soil EC parquet file
-f_soil_EC_15 <- read_L2_variable("soil-EC-15cm", path = "L2_data/") |> 
+Soil_EC_15 <- read_L2_variable("soil-EC-15cm", path = "L2_data/") |> 
   select (Plot, TIMESTAMP, Instrument_ID, Sensor_ID, Location, Value)
+# 5 and 30 cm depths 
+soil_EC5 <- read_L2_variable("soil-EC-5cm", path = "L2_data/")
+soil_EC30 <- read_L2_variable("soil-EC-30cm", path = "L2_data/")
 
 #Summarizing EC file 
-head(f_soil_EC_15)
-names(f_soil_EC_15)
-dim(f_soil_EC_15)
-str(f_soil_EC_15)
-print(colnames(f_soil_EC_15))
-summary(f_soil_EC_15)
+head(Soil_EC_15)
+names(Soil_EC_15)
+dim(Soil_EC_15)
+str(Soil_EC_15)
+print(colnames(Soil_EC_15))
+summary(Soil_EC_15)
 
 # Line Chart of all the data
 # Randomly sub_sample the data to make plotting faster
-f_soil_EC_15 |>
+Soil_EC_15 |>
   # this dataset is VERY large so just select 1000 random rows to plot
   slice_sample(n = 1000) |>
   ggplot(aes(x = TIMESTAMP, y = Value, color = Plot)) +
@@ -203,23 +212,23 @@ f_soil_EC_15 |>
   theme_minimal()
 
 #convert to date type and extract the month for EC
-f_soil_EC_15<- f_soil_EC_15 |> 
+Soil_EC_15<- Soil_EC_15 |> 
   mutate(
     month_column = as.Date(TIMESTAMP))
-f_soil_EC_15 <- f_soil_EC_15 |> 
+Soil_EC_15 <- Soil_EC_15 |> 
   mutate(
     month = month(month_column, label = TRUE))
 
 # graph of each month for EC
 ggplot(
-  f_soil_EC_15, aes(x = month, y = Value, group = Plot, color = Plot)) + 
+  Soil_EC_15, aes(x = month, y = Value, group = Plot, color = Plot)) + 
   geom_boxplot() + 
   facet_wrap(~ month, scales = "free_x", ncol = 6) + 
   labs(title = "EC by Month", y = "EC", x = "Month") + 
   theme_minimal()
 
 # Boxplot with points (choose between the ones w/ or w/out)
-f_soil_EC_15 |> 
+Soil_EC_15 |> 
   slice_sample(n = 1000) |> 
   ggplot(
     aes(x = month, y = Value)) + 
@@ -229,7 +238,7 @@ f_soil_EC_15 |>
   theme_minimal()
 
 # graph with colors 
-f_soil_EC_15 |> 
+Soil_EC_15 |> 
   slice_sample(n = 1000) |> 
   ggplot(aes(x = month, y = Value, color = Value)) + 
   geom_point(na.rm = TRUE) +
@@ -254,7 +263,7 @@ soil_temp15 |>
 
 #Adding the soil EC 
 teros_combined |> 
-  left_join(f_soil_EC_15, 
+  left_join(Soil_EC_15, 
             by = c("Plot", "TIMESTAMP", "Instrument_ID", "Sensor_ID", "Location"), 
             relationship = "one-to-one") |> 
   rename(Value_ec15 = Value) ->
@@ -411,13 +420,3 @@ teros_combined |> group_by(Location) |> summarise(mean_temp5 = mean(Value, na.rm
   scale_color_viridis_c(option = "H", begin = 0.2) +
   theme_bw() +
   labs(title = "Freshwatwr Plot Soil Temperature - 15cm", color = "temperature C")
-
-#Load all of the data including the 5, 10, 30 cm 
-soil_temp5 <- read_L2_variable("soil-temp-5cm",  path = "L2_data/")
-soil_temp30 <- read_L2_variable("soil-temp-30cm",  path = "L2_data/")
-
-soil_vwc5 <- read_L2_variable("soil-vwc-5cm", path = "L2_data/")
-soil_vwc30 <- read_L2_variable("soil-vwc-30cm", path = "L2_data/")
-
-soil_EC5 <- read_L2_variable("soil-EC-5cm", path = "L2_data/")
-soil_EC30 <- read_L2_variable("soil-EC-30cm", path = "L2_data/")
