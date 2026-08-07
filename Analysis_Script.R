@@ -430,7 +430,9 @@ teros_combined |> group_by(Location) |> summarise(mean_temp5 = mean(Value, na.rm
   scale_color_viridis_c(option = "H", begin = 0.2) +
   theme_bw() +
   labs(title = "Freshwatwr Plot Soil Temperature - 15cm", color = "temperature C")
-
+#-----------------------------------------
+#------------------- New depths ----------
+#-----------------------------------------
 #trying with the new split data set
 Split_soil_temp |> 
   slice_sample(n = 1000) |> 
@@ -470,3 +472,7 @@ Soil_temp |>
   geom_line() + 
   geom_point() + labs( title = "Soil Temperature by Sensor ", x = "Month", y = "Average Temp")
 
+
+Split_soil_temp |> 
+       slice_sample(n = 1000) |> 
+       ggplot( aes(x = TIMESTAMP, y = Value, group = depth, color = depth)) + geom_point() + facet_wrap(~Plot)
