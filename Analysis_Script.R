@@ -396,6 +396,8 @@ ggplot( aes(x = TIMESTAMP)) +
   facet_wrap(~ Location)  + 
   labs(y = "Temperature/EC", color = "Variable") 
 
+
+
 #Tiles
 teros_combined |> group_by(Location, Plot) |> 
   summarise(mean_temp15 = mean(Value_temp15, na.rm = TRUE), .groups = "drop") |> 
@@ -415,7 +417,7 @@ teros_temp15_loc_avg |>
 sd(soil_temp15$Value, na.rm = TRUE) / mean(soil_temp15$Value, na.rm = TRUE) -> Cv
 
 #Freshwater special plot 15cm-5
-teros_combined |> group_by(Location) |> summarise(mean_temp5 = mean(Value, na.rm = TRUE)) |> 
+teros_combined |> group_by(Location) |> summarise(mean_temp5 = mean(Value_temp15, na.rm = TRUE)) |> 
   separate(Location, into = c("grid_letter", "grid_number"), sep = 1) |> 
   ggplot(aes(x = grid_letter, y = grid_number, color = mean_temp5)) + 
   geom_point(size = 3) +
@@ -424,7 +426,6 @@ teros_combined |> group_by(Location) |> summarise(mean_temp5 = mean(Value, na.rm
   labs(title = "Freshwatwr Plot Soil Temperature - 15cm", color = "temperature C")
 
 #Plot Temp vs. VWC
-
 #PLot
 teros_combined |> 
   slice_sample(n= 1000) |> 
@@ -432,6 +433,15 @@ ggplot(aes(x = Value_temp15, y = Value_vwc15, color = Plot)) +
   geom_point(alpha = 0.5, size = 1.5) +
   facet_wrap(~ month) +
   labs(title = "Soil Temperature and VWC by plots", x = "Temperature", y = "Volumetric Water Content") +
+  theme_minimal()
+
+#faceting by plot and coloring by month 
+teros_combined |> 
+  slice_sample(n = 1000) |> 
+  ggplot(aes(x = Value_temp15, y = Value_vwc15, color = month)) +
+  geom_point(alpha = 0.5, size = 1.5) +
+  facet_wrap(~ Plot) + 
+  labs(title = "Soil Temperature and vwc by plots", x = "Temperature", y = "Volumetric Water Content") + 
   theme_minimal()
 
 #Months
