@@ -199,6 +199,13 @@ Soil_temp |> separate(research_name, into = c("first_part", "second_part", "dept
 Soil_vwc |>  separate(research_name, into = c("first_part", "second_part", "depth")) -> Split_Soil_vwc
 Soil_EC |> separate(research_name, into = c("first_part", "second_part", "depth")) -> Split_Soil_EC
 
+#Making a table summarizing soil temp by depth and quarter of the year 
+Split_soil_temp |>  
+  select(TIMESTAMP, depth, Value) |> 
+  mutate(Season = quarter(TIMESTAMP)) |> 
+  group_by(depth, Season) |> 
+  summarize(Value = mean(Value, na.rm = TRUE), .groups = "drop") |> 
+  pivot_wider(values_from = "Value", names_from = "Season")
 
 #Summarizing EC file 
 head(Soil_EC_15)
