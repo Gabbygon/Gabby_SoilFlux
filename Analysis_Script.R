@@ -44,7 +44,7 @@ soil_temp15 |>
   # add a 'smoother' -- a smooth line that follows the data to help
   # audience see trend
   geom_smooth(linetype = 2) +
-  labs( title = "Soil Temperature Over Time", x = "TimeStamp", y = "Temperature")
+  labs( title = "Soil Temperature Over Time - 15cm", x = "TimeStamp", y = "Temperature")
 
 # Goup by month and sensor ID
 # Take the mean of the value column
@@ -100,7 +100,7 @@ soil_temp15 |>
   geom_point() + 
   geom_line(linetype = 2, aes(group = Plot)) +
   geom_errorbar(aes(ymin = mean_value - sd_value, ymax = mean_value + sd_value)) +
-  labs(title = "Per-month Variability", y = "Average Value", x = "Month") + 
+  labs(title = "Per-Month Variability - 15cm", y = "Average Temperature", x = "Month") + 
   theme(axis.text.x = element_text(angle = 45, hjust= 1))
 
 # Soil volumetric Water Content 15 cm 
@@ -126,7 +126,7 @@ soil_vwc15 |>
   # add a 'smoother' -- a smooth line that follows the data to help
   # audience see trend
   geom_smooth(linetype = 2) +
-  labs( title = "Soil VWC Over Time", x = "Month", y = "Volumetric Water content") + 
+  labs( title = "Soil VWC Over Time - 15cm", x = "Month", y = "Volumetric Water Content") + 
   theme_minimal()
 
 # Group by month and sensor
@@ -397,9 +397,10 @@ ggplot( aes(x = TIMESTAMP)) +
   labs(y = "Temperature/EC", color = "Variable") 
 
 
-
 #Tiles
-teros_combined |> group_by(Location, Plot) |> 
+teros_combined |> 
+  filter(Plot == "S" & Location != "B4" | Plot %in% c("F", "C"))|> 
+  group_by(Location, Plot) |> 
   summarise(mean_temp15 = mean(Value_temp15, na.rm = TRUE), .groups = "drop") |> 
   separate(Location, into = c("grid_letter", "grid_number"), sep = 1) ->
   teros_temp15_loc_avg
@@ -410,8 +411,22 @@ teros_temp15_loc_avg |>
   geom_tile() +
   scale_fill_viridis_c(option = "B") +
   theme_bw() +
-  labs(title = "Freshwater Plot Soil Temperature - 15cm", fill = "temperature C") +
-  facet_wrap(~Plot)
+  labs(title = "Soil Temperature - 15cm", fill = "Temperature C") +
+  facet_wrap(~Plot, ncol = 1)
+
+#Moving 
+teros_temp15_loc_avg |>
+  ggplot(aes(x = grid_letter, y = grid_number, fill = mean_temp15)) + 
+  geom_tile() +
+  scale_fill_viridis_c(option = "B") +
+  theme_bw() +
+  labs(title = "Soil Temperature - 15cm", fill = "Temperature C") +
+  facet_wrap(~Plot, ncol = 1)
+
+##########################
+
+
+
 
 #calculating the coefficient of variability
 sd(soil_temp15$Value, na.rm = TRUE) / mean(soil_temp15$Value, na.rm = TRUE) -> Cv
